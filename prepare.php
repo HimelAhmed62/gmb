@@ -142,7 +142,7 @@ include 'includes/header.php';
                                         <div class="fw-bold text-dark"><?php echo htmlspecialchars($lead['company_name']); ?></div>
                                         <?php 
                                             $websiteStr = htmlspecialchars($lead['website']);
-                                            $websiteDisplay = (strlen($websiteStr) > 14) ? substr($websiteStr, 0, 14) . '...' : $websiteStr;
+                                            $websiteDisplay = (strlen($websiteStr) > 30) ? substr($websiteStr, 0, 30) . '...' : $websiteStr;
                                             $websiteUrl = $websiteStr;
                                             if (!empty($websiteUrl) && !preg_match("~^(?:f|ht)tps?://~i", $websiteUrl)) {
                                                 $websiteUrl = "http://" . $websiteUrl;
