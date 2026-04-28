@@ -85,13 +85,18 @@ include 'includes/header.php';
                         </div>
                     </div>
                     <div class="col-md-5">
-                        <div class="d-flex flex-column gap-2">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0 text-muted small">Leads</span>
-                                <input type="number" id="processCount" class="form-control form-control-custom text-center fw-bold" value="<?php echo $targetId ? '1' : '10'; ?>" min="1" max="<?php echo count($pendingLeads); ?>">
+                        <div class="p-4 bg-light rounded-4 border border-dashed h-100 d-flex flex-column justify-content-center">
+                            <h6 class="fw-bold mb-3">Batch Processing</h6>
+                            <div class="bg-white p-3 rounded-4 border shadow-sm mb-3 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <p class="text-muted small fw-bold mb-0 text-uppercase">Leads to Process</p>
+                                    <p class="text-dark extra-small mb-0">Max: <?php echo count($pendingLeads); ?></p>
+                                </div>
+                                <input type="number" id="processCount" class="form-control form-control-custom text-center fw-bold w-50 fs-5 text-primary" value="<?php echo $targetId ? '1' : min(10, count($pendingLeads)); ?>" min="1" max="<?php echo count($pendingLeads); ?>">
                             </div>
-                            <button id="startProcessBtn" class="btn btn-primary-custom w-100 py-3 fw-bold" <?php echo count($pendingLeads) === 0 ? 'disabled' : ''; ?>>
-                                <i data-lucide="zap" style="width: 18px; height: 18px;"></i> Run Selected Audit
+                            <button id="startProcessBtn" class="btn btn-primary w-100 py-3 fw-bold rounded-4 shadow d-flex align-items-center justify-content-center gap-2" <?php echo count($pendingLeads) === 0 ? 'disabled' : ''; ?> style="transition: all 0.3s ease;">
+                                <i data-lucide="zap" style="width: 20px; height: 20px;"></i> 
+                                <span>Run Selected Audit</span>
                             </button>
                         </div>
                     </div>
@@ -242,9 +247,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Handle all clicks in the document
     document.addEventListener('click', function(e) {
         // 1. Start Analysis Button
-        if (e.target && e.target.id === 'startProcessBtn') {
+        const startBtn = e.target.closest('#startProcessBtn');
+        if (startBtn) {
             const count = parseInt(document.getElementById('processCount').value);
-            const engine = document.querySelector('input[name="auditEngine"]:checked').value;
+            const engineInput = document.querySelector('input[name="auditEngine"]:checked');
+            if (!engineInput) {
+                alert('Please select an Audit Engine first.');
+                return;
+            }
+            const engine = engineInput.value;
             if (isNaN(count) || count < 1) return;
 
             document.getElementById('setupArea').classList.add('d-none');
