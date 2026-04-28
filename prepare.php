@@ -140,7 +140,21 @@ include 'includes/header.php';
                                 <tr>
                                     <td class="ps-4">
                                         <div class="fw-bold text-dark"><?php echo htmlspecialchars($lead['company_name']); ?></div>
-                                        <div class="text-muted extra-small"><?php echo htmlspecialchars($lead['website']); ?></div>
+                                        <?php 
+                                            $websiteStr = htmlspecialchars($lead['website']);
+                                            $websiteDisplay = (strlen($websiteStr) > 14) ? substr($websiteStr, 0, 14) . '...' : $websiteStr;
+                                            $websiteUrl = $websiteStr;
+                                            if (!empty($websiteUrl) && !preg_match("~^(?:f|ht)tps?://~i", $websiteUrl)) {
+                                                $websiteUrl = "http://" . $websiteUrl;
+                                            }
+                                        ?>
+                                        <?php if (!empty($websiteStr)): ?>
+                                        <a href="<?php echo $websiteUrl; ?>" target="_blank" class="text-muted extra-small text-decoration-none fw-medium" style="transition: color 0.2s;" onmouseover="this.classList.add('text-primary')" onmouseout="this.classList.remove('text-primary')">
+                                            <i data-lucide="link" style="width: 10px; height: 10px; margin-right: 2px; margin-top: -2px;"></i><?php echo $websiteDisplay; ?>
+                                        </a>
+                                        <?php else: ?>
+                                        <div class="text-muted extra-small">N/A</div>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-2">
