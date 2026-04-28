@@ -156,7 +156,8 @@ function showToast(message, type = 'success') {
         <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
     `;
     document.body.appendChild(toast);
-    setTimeout(() => { if(toast) toast.remove(); }, 6000);
+    const duration = type === 'danger' ? 15000 : 6000;
+    setTimeout(() => { if(toast && toast.parentNode) toast.remove(); }, duration);
 }
 </script>
 
