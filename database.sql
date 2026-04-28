@@ -7,8 +7,10 @@ CREATE TABLE IF NOT EXISTS leads (
     contact_name VARCHAR(255),
     email VARCHAR(255),
     phone VARCHAR(50),
-    status ENUM('Pending', 'Preparing', 'Ready', 'Contacted') DEFAULT 'Pending',
+    status ENUM('Pending', 'Preparing', 'Ready', 'Contacted', 'Qualified', 'Failed') DEFAULT 'Pending',
     score INT DEFAULT 0,
+    scores TEXT,
+    metadata TEXT,
     audit_engine VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

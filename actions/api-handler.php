@@ -65,10 +65,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         '123456-abcde.apps.googleusercontent.com'
     ];
     if (in_array($apiKey, $placeholders)) {
-        if ($api === 'chatgpt') $apiKey = $_SESSION['chatgpt_api_key'] ?? '';
-        if ($api === 'gemini') $apiKey = $_SESSION['gemini_api_key'] ?? '';
+        if ($api === 'chatgpt') {
+            $apiKey = $_SESSION['chatgpt_api_key'] ?? '';
+            // If model is missing in POST, use session
+            if (empty($_POST['model'])) $_POST['model'] = $_SESSION['chatgpt_model'] ?? 'gpt-3.5-turbo';
+        }
+        if ($api === 'gemini') {
+            $apiKey = $_SESSION['gemini_api_key'] ?? '';
+            if (empty($_POST['model'])) $_POST['model'] = $_SESSION['gemini_model'] ?? 'gemini-1.5-flash';
+        }
         if ($api === 'whatsapp') $apiKey = $_SESSION['whatsapp_access_token'] ?? '';
-        // Add more as needed
     }
     
     if ($api === 'chatgpt' && $action === 'verify') {
@@ -171,18 +177,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        $url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" . $apiKey;
-        $payload = json_encode(["contents" => [["parts" => [["text" => "hi"]]]]]);
+        // Use v1beta to fetch models
+        $url = "https://generativelanguage.googleapis.com/v1beta/models?key=" . $apiKey;
         
         $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($ch, CURLOPT_TIMEOUT, 20);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
         
@@ -190,16 +192,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($response === false) {
-            echo json_encode(['success' => false, 'message' => 'Gemini Network Error.']);
-            exit;
-        }
-
         if ($httpCode === 200) {
-            echo json_encode(['success' => true, 'message' => 'Gemini API Key is valid!']);
+            $data = json_decode($response, true);
+            $models = [];
+            if (isset($data['models']) && is_array($data['models'])) {
+                foreach ($data['models'] as $model) {
+                    // Extract ID from 'models/gemini-...'
+                    $id = str_replace('models/', '', $model['name']);
+                    if (strpos($id, 'gemini-') === 0 && in_array('generateContent', $model['supportedGenerationMethods'])) {
+                        $models[] = $id;
+                    }
+                }
+            }
+            sort($models);
+            if (empty($models)) $models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro'];
+            echo json_encode(['success' => true, 'message' => 'Gemini API Key is valid!', 'models' => $models]);
         } else {
             $errorData = json_decode($response, true);
-            $errorMsg = $errorData['error']['message'] ?? $errorData[0]['error']['message'] ?? 'Gemini API Error (HTTP ' . $httpCode . '): ' . $response;
+            $errorMsg = $errorData['error']['message'] ?? 'Gemini API Error (HTTP ' . $httpCode . '): ' . $response;
+            echo json_encode(['success' => false, 'message' => $errorMsg]);
+        }
+        exit;
+    }
+
+    if ($api === 'gemini' && $action === 'chat') {
+        header('Content-Type: application/json');
+        $message = $_POST['message'] ?? 'Hi';
+        $model = $_POST['model'] ?? 'gemini-1.5-flash';
+
+        // Always use v1beta for test chat with 1.5 models
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . $apiKey;
+        $payload = json_encode([
+            "contents" => [["parts" => [["text" => $message]]]]
+        ]);
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200) {
+            $data = json_decode($response, true);
+            $reply = $data['candidates'][0]['content']['parts'][0]['text'] ?? 'No response content.';
+            echo json_encode(['success' => true, 'response' => $reply]);
+        } else {
+            $errorData = json_decode($response, true);
+            $errorMsg = $errorData['error']['message'] ?? 'Gemini Chat Error (HTTP ' . $httpCode . ')';
             echo json_encode(['success' => false, 'message' => $errorMsg]);
         }
         exit;
@@ -220,17 +267,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($api === 'gemini') {
                 $_SESSION['gemini_connected'] = true;
                 $_SESSION['gemini_api_key'] = $apiKey;
+                $model = $_POST['model'] ?? 'gemini-1.5-flash';
+                $prompt = $_POST['research_instructions'] ?? '';
+                $_SESSION['gemini_model'] = $model;
+                $_SESSION['gemini_prompt'] = $prompt;
                 $stmt->execute(['gemini_connected', '1', '1']);
                 $stmt->execute(['gemini_api_key', $apiKey, $apiKey]);
+                $stmt->execute(['gemini_model', $model, $model]);
+                $stmt->execute(['gemini_prompt', $prompt, $prompt]);
             }
             if ($api === 'chatgpt') {
                 $_SESSION['chatgpt_connected'] = true;
                 $_SESSION['chatgpt_api_key'] = $apiKey;
                 $model = $_POST['model'] ?? 'gpt-3.5-turbo';
+                $prompt = $_POST['research_instructions'] ?? '';
                 $_SESSION['chatgpt_model'] = $model;
+                $_SESSION['chatgpt_prompt'] = $prompt;
                 $stmt->execute(['chatgpt_connected', '1', '1']);
                 $stmt->execute(['chatgpt_api_key', $apiKey, $apiKey]);
                 $stmt->execute(['chatgpt_model', $model, $model]);
+                $stmt->execute(['chatgpt_prompt', $prompt, $prompt]);
             }
             set_flash_message(ucfirst($api) . " connected successfully", "success");
         }

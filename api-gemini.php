@@ -75,10 +75,20 @@ include 'includes/header.php';
                     
                     <div class="mb-4">
                         <label class="form-label fw-bold small text-muted">AI Model Selection</label>
-                        <select name="model" class="form-select form-control-custom fw-medium">
-                            <option value="gemini-1.5-pro">Gemini 1.5 Pro (Best quality)</option>
-                            <option value="gemini-1.5-flash" selected>Gemini 1.5 Flash (Faster, cheaper)</option>
+                        <select name="model" class="form-select form-control-custom fw-medium" <?php echo !($_SESSION['gemini_connected'] ?? false) ? 'disabled' : ''; ?>>
+                            <?php if ($_SESSION['gemini_model'] ?? false): ?>
+                                <option value="<?php echo $_SESSION['gemini_model']; ?>" selected><?php echo $_SESSION['gemini_model']; ?></option>
+                            <?php else: ?>
+                                <option value="">Test Connection to load models...</option>
+                            <?php endif; ?>
                         </select>
+                        <div class="form-text extra-small text-muted mt-1"><i data-lucide="info" style="width: 12px; height: 12px;"></i> Models are fetched dynamically from Google AI Studio.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-muted">Research Instructions (Custom Prompt)</label>
+                        <textarea name="research_instructions" class="form-control form-control-custom small" rows="4" placeholder="Example: Analyze the website's SEO, loading speed, and mobile responsiveness. Provide specific suggestions..."><?php echo $_SESSION['gemini_prompt'] ?? ''; ?></textarea>
+                        <div class="form-text extra-small text-muted mt-1"><i data-lucide="info" style="width: 12px; height: 12px;"></i> This prompt will be used to guide the AI during the website audit.</div>
                     </div>
 
                     <div class="d-flex gap-2 pt-2 border-top">
@@ -121,6 +131,25 @@ include 'includes/header.php';
             </div>
             <?php endif; ?>
         </div>
+
+        <!-- Live Chat Test -->
+        <div class="premium-card mt-4" id="chatTestCard" style="display: <?php echo ($_SESSION['gemini_connected'] ?? false) ? 'block' : 'none'; ?>;">
+            <div class="card-header-custom border-bottom pb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary bg-opacity-10 p-2 rounded-2 text-primary"><i data-lucide="messages-square" style="width: 18px; height: 18px;"></i></div>
+                    <h6 class="fw-bold mb-0">Live Test Chat</h6>
+                </div>
+            </div>
+            <div class="card-body-custom">
+                <div id="chatWindow" class="bg-light rounded-3 p-3 mb-3 font-monospace small text-muted" style="height: 180px; overflow-y: auto; border: 1px inset rgba(0,0,0,0.05);">
+                    <div class="mb-2">System: Gemini ready. Send a message to test.</div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="chatInput" class="form-control form-control-custom" placeholder="Say hi...">
+                    <button class="btn btn-primary-custom" type="button" id="sendChatBtn">Send</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -159,7 +188,22 @@ document.getElementById('testConnectionBtn').addEventListener('click', function(
         btn.disabled = false;
         btn.innerHTML = originalText;
         if (data.success) {
-            showToast('Success! Your Gemini API key is valid.', 'success');
+            showToast('Success! Gemini models loaded.', 'success');
+            
+            // Populate models dynamically
+            const modelSelect = document.querySelector('select[name="model"]');
+            if (data.models && data.models.length > 0) {
+                modelSelect.innerHTML = '';
+                data.models.forEach(m => {
+                    const option = document.createElement('option');
+                    option.value = m;
+                    option.innerText = m;
+                    if (m === 'gemini-1.5-flash') option.selected = true;
+                    modelSelect.appendChild(option);
+                });
+            }
+            
+            document.getElementById('chatTestCard').style.display = 'block';
         } else {
             showToast('Failed: ' + data.message, 'danger');
         }
@@ -168,6 +212,58 @@ document.getElementById('testConnectionBtn').addEventListener('click', function(
         btn.disabled = false;
         btn.innerHTML = originalText;
         showToast('Connection error: ' + err.message, 'danger');
+    });
+});
+
+// Gemini Chat Test Logic
+document.getElementById('sendChatBtn').addEventListener('click', function() {
+    const chatInput = document.getElementById('chatInput');
+    const chatWindow = document.getElementById('chatWindow');
+    const apiKey = document.querySelector('input[name="api_key"]').value.trim();
+    const model = document.querySelector('select[name="model"]').value || 'gemini-1.5-flash';
+    const msg = chatInput.value.trim();
+
+    if (!msg) return;
+
+    chatWindow.innerHTML += `<div class="mb-2 text-dark"><strong>You:</strong> ${msg}</div>`;
+    chatInput.value = '';
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    const originalBtn = this.innerHTML;
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    const formData = new URLSearchParams();
+    formData.append('api', 'gemini');
+    formData.append('action', 'chat');
+    formData.append('api_key', apiKey);
+    formData.append('model', model);
+    formData.append('message', msg);
+
+    fetch('actions/api-handler.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData
+    })
+    .then(async response => {
+        const text = await response.text();
+        try { return JSON.parse(text); } catch(e) { throw new Error(text); }
+    })
+    .then(result => {
+        this.disabled = false;
+        this.innerHTML = originalBtn;
+        if (result.success) {
+            chatWindow.innerHTML += `<div class="mb-2 text-primary"><strong>Gemini:</strong> ${result.response}</div>`;
+        } else {
+            chatWindow.innerHTML += `<div class="mb-2 text-danger"><strong>Error:</strong> ${result.message}</div>`;
+        }
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    })
+    .catch(error => {
+        this.disabled = false;
+        this.innerHTML = originalBtn;
+        chatWindow.innerHTML += `<div class="mb-2 text-danger"><strong>System Error:</strong> ${error.message}</div>`;
+        chatWindow.scrollTop = chatWindow.scrollHeight;
     });
 });
 

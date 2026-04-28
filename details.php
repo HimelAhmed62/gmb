@@ -2,16 +2,25 @@
 require_once 'includes/config.php'; 
 
 $id = $_GET['id'] ?? '';
-$leadsFile = 'data/leads.json';
 $lead = null;
 
-if (file_exists($leadsFile)) {
-    $leads = json_decode(file_get_contents($leadsFile), true) ?? [];
-    foreach ($leads as $l) {
-        if ($l['id'] === $id) {
-            $lead = $l;
-            break;
+if ($id) {
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM leads WHERE id = ?");
+        $stmt->execute([$id]);
+        $lead = $stmt->fetch();
+        
+        if ($lead) {
+            // Decode metadata if it's a string
+            if (is_string($lead['metadata'])) {
+                $lead['metadata'] = json_decode($lead['metadata'], true) ?? [];
+            }
+            if (is_string($lead['scores'])) {
+                $lead['scores'] = json_decode($lead['scores'], true) ?? [];
+            }
         }
+    } catch (Exception $e) {
+        $lead = null;
     }
 }
 
@@ -48,7 +57,7 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
             </p>
         </div>
         <div class="d-flex gap-2">
-            <button class="btn btn-outline-custom d-flex align-items-center gap-2">
+            <button class="btn btn-outline-custom d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#auditModal">
                 <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i> Re-Audit
             </button>
             <button class="btn btn-primary-custom d-flex align-items-center gap-2">
@@ -87,22 +96,19 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                     </div>
                 </div>
                 
-                <h6 class="fw-bold mb-3">Identified Issues</h6>
-                <div class="d-flex flex-column gap-2">
-                    <div class="p-3 border rounded-3 d-flex align-items-center gap-3">
-                        <i data-lucide="alert-triangle" class="text-warning"></i>
-                        <div>
-                            <p class="fw-bold mb-0">Optimization Opportunity</p>
-                            <p class="text-muted small mb-0">Website at <strong><?php echo htmlspecialchars($lead['website']); ?></strong> could benefit from better meta tag descriptions to improve CTR.</p>
+                <h6 class="fw-bold mb-3">AI Research & Analysis</h6>
+                <div class="p-4 bg-primary bg-opacity-5 border border-primary border-opacity-10 rounded-4">
+                    <?php if (isset($lead['metadata']['ai_analysis'])): ?>
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="bg-primary bg-opacity-10 p-2 rounded-3 text-primary"><i data-lucide="microscope" style="width: 20px; height: 20px;"></i></div>
+                            <div class="text-dark small lh-base"><?php echo nl2br(htmlspecialchars($lead['metadata']['ai_analysis'])); ?></div>
                         </div>
-                    </div>
-                    <div class="p-3 border rounded-3 d-flex align-items-center gap-3">
-                        <i data-lucide="zap" class="text-primary"></i>
-                        <div>
-                            <p class="fw-bold mb-0">Mobile Responsiveness</p>
-                            <p class="text-muted small mb-0">Initial scan shows good mobile structure, but LCP (Largest Contentful Paint) is slightly delayed.</p>
+                    <?php else: ?>
+                        <div class="text-center py-3">
+                            <i data-lucide="search" class="text-muted mb-2" style="width: 32px; height: 32px;"></i>
+                            <p class="text-muted small mb-0">No live research data available. Click <strong>Re-Audit</strong> to start analyzing this website with AI.</p>
                         </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -184,5 +190,141 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
         </div>
     </div>
 </div>
+
+<!-- Re-Audit Modal -->
+<div class="modal fade" id="auditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-bottom p-4">
+                <h5 class="modal-title fw-bold">Select Audit Engine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-4">Choose which AI model you want to use for this website research. The audit will use the instructions defined in your API settings.</p>
+                
+                <div class="row g-3">
+                    <div class="col-4">
+                        <label class="w-100 cursor-pointer">
+                            <input type="radio" name="audit_ai" value="chatgpt" class="btn-check" checked <?php echo !($_SESSION['chatgpt_connected'] ?? false) ? 'disabled' : ''; ?>>
+                            <div class="btn btn-outline-custom w-100 p-3 rounded-4 d-flex flex-column align-items-center gap-2">
+                                <i data-lucide="brain" class="text-success" style="width: 28px; height: 28px;"></i>
+                                <span class="fw-bold small">ChatGPT</span>
+                                <span class="extra-small <?php echo ($_SESSION['chatgpt_connected'] ?? false) ? 'text-success' : 'text-danger'; ?>">
+                                    <?php echo ($_SESSION['chatgpt_connected'] ?? false) ? 'Ready' : 'Off'; ?>
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-4">
+                        <label class="w-100 cursor-pointer">
+                            <input type="radio" name="audit_ai" value="gemini" class="btn-check" <?php echo !($_SESSION['gemini_connected'] ?? false) ? 'disabled' : ''; ?>>
+                            <div class="btn btn-outline-custom w-100 p-3 rounded-4 d-flex flex-column align-items-center gap-2">
+                                <i data-lucide="sparkles" class="text-primary" style="width: 28px; height: 28px;"></i>
+                                <span class="fw-bold small">Gemini</span>
+                                <span class="extra-small <?php echo ($_SESSION['gemini_connected'] ?? false) ? 'text-success' : 'text-danger'; ?>">
+                                    <?php echo ($_SESSION['gemini_connected'] ?? false) ? 'Ready' : 'Off'; ?>
+                                </span>
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-4">
+                        <label class="w-100 cursor-pointer">
+                            <input type="radio" name="audit_ai" value="manual" class="btn-check">
+                            <div class="btn btn-outline-custom w-100 p-3 rounded-4 d-flex flex-column align-items-center gap-2">
+                                <i data-lucide="code-2" class="text-warning" style="width: 28px; height: 28px;"></i>
+                                <span class="fw-bold small">Manual</span>
+                                <span class="extra-small text-warning">Unlimited</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 p-4 pt-0">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="startAuditBtn" class="btn btn-primary-custom px-4 flex-grow-1">Start Research</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load the custom script from the database
+const customAuditScript = `<?php echo addslashes($_SESSION['manual_audit_script'] ?? "function audit(html) { return { performance: 80, seo: 80, accessibility: 80, analysis: 'No custom script defined.', status: 'Qualified' }; }"); ?>`;
+
+document.getElementById('startAuditBtn').addEventListener('click', async function() {
+    const ai = document.querySelector('input[name="audit_ai"]:checked').value;
+    const leadId = '<?php echo $lead['id']; ?>';
+    const btn = this;
+    const originalText = btn.innerHTML;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing...';
+
+    try {
+        if (ai === 'manual') {
+            // 1. Fetch HTML
+            const fetchRes = await fetch('actions/audit-handler.php', {
+                method: 'POST',
+                body: new URLSearchParams({ lead_id: leadId, ai: 'manual_fetch' })
+            });
+            const fetchData = await fetchRes.json();
+            
+            if (!fetchData.success) throw new Error(fetchData.message);
+
+            // 2. Execute User Script
+            let auditResult;
+            try {
+                // Pass both html and the target URL to the script
+                const userFunc = new Function('html', 'url', `${customAuditScript}\n return typeof audit === 'function' ? audit(html, url) : { performance: 50, seo: 50, accessibility: 50, analysis: 'Invalid script structure. Please define an audit(html, url) function.', status: 'Failed' };`);
+                auditResult = userFunc(fetchData.html, fetchData.url);
+            } catch (e) {
+                throw new Error("Script Error: " + e.message);
+            }
+
+            // 3. Save Results
+            const saveRes = await fetch('actions/audit-handler.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ 
+                    lead_id: leadId, 
+                    ai: 'manual_save', 
+                    results: JSON.stringify(auditResult) 
+                })
+            });
+            
+            const saveText = await saveRes.text();
+            let saveData;
+            try { 
+                saveData = JSON.parse(saveText); 
+            } catch(e) { 
+                console.error("Save Error Response:", saveText);
+                throw new Error("Invalid response from server during save."); 
+            }
+
+            if (!saveData.success) throw new Error(saveData.message || "Unknown save error");
+            
+            location.reload();
+        } else {
+            // Standard AI Audit
+            const formData = new FormData();
+            formData.append('lead_id', leadId);
+            formData.append('ai', ai);
+
+            const response = await fetch('actions/audit-handler.php', { method: 'POST', body: formData });
+            const result = await response.json();
+            
+            if (result.success) {
+                location.reload();
+            } else {
+                throw new Error(result.message);
+            }
+        }
+    } catch (error) {
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+});
+</script>
 
 <?php include 'includes/footer.php'; ?>

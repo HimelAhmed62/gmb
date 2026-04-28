@@ -152,6 +152,72 @@ try {
                                     <p class="text-muted small mt-2 mb-0 d-flex align-items-center gap-1"><i data-lucide="clock" style="width: 14px; height: 14px;"></i> Higher delay reduces spam flags</p>
                                 </div>
                             </div>
+                            <div class="premium-card mt-4">
+                                <div class="card-header-custom border-bottom pb-3">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="bg-warning bg-opacity-10 p-2 rounded-2 text-warning"><i data-lucide="code-2" style="width: 20px; height: 20px;"></i></div>
+                                        <h6 class="fw-bold mb-0">Manual Audit Settings</h6>
+                                    </div>
+                                </div>
+                                <div class="card-body-custom">
+                                    <p class="text-muted small mb-3">Define your own custom JavaScript logic for the free manual audit. This script will have access to the website HTML.</p>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold small text-muted">Custom Audit Script (JS)</label>
+                                        <textarea name="manual_audit_script" class="form-control form-control-custom font-monospace small" rows="15" placeholder="function audit(html, url) { ... }"><?php echo $_SESSION['manual_audit_script'] ?? "function audit(html, url) {
+    let scores = { performance: 80, seo: 70, accessibility: 75 };
+    let analysis = [];
+    
+    // 1. CMS Detection
+    let cms = 'Custom / Unknown';
+    if (html.includes('wp-content')) cms = 'WordPress';
+    else if (html.includes('shopify.com')) cms = 'Shopify';
+    else if (html.includes('wixsite.com')) cms = 'Wix';
+    else if (html.includes('bitrix')) cms = 'Bitrix';
+    analysis.push('CMS Detected: ' + cms);
+
+    // 2. Performance / Loading Speed (Estimated)
+    let size = html.length / 1024; // KB
+    let speedScore = 100 - (size / 10);
+    scores.performance = Math.max(10, Math.min(99, Math.round(speedScore)));
+    analysis.push('Estimated Loading Speed: ' + (scores.performance > 70 ? 'Good' : 'Needs Optimization') + ' (' + Math.round(size) + 'KB code size)');
+
+    // 3. Security (SSL Check using URL)
+    let isSecure = url.startsWith('https');
+    analysis.push('Security: ' + (isSecure ? 'SSL Protected (HTTPS)' : 'Insecure (HTTP)'));
+    if (!isSecure) scores.accessibility -= 20;
+
+    // 4. WordPress Specific Checks
+    if (cms === 'WordPress') {
+        if (html.includes('wp-json/wp/v2/users')) analysis.push('Security Warning: WordPress REST API users endpoint is exposed.');
+        if (html.includes('ver=')) analysis.push('Note: Script version strings are visible, which can reveal plugin/theme versions.');
+    }
+
+    // 5. Responsiveness
+    let isResponsive = html.includes('viewport') && html.includes('width=device-width');
+    analysis.push('Responsiveness: ' + (isResponsive ? 'Mobile Friendly' : 'Missing Viewport Meta Tag (Not Responsive)'));
+    if (!isResponsive) scores.accessibility -= 30;
+
+    // 6. SEO Basics
+    let hasTitle = html.includes('<title>');
+    let hasDesc = html.includes('name=\"description\"');
+    if (!hasTitle || !hasDesc) {
+        analysis.push('SEO: Missing essential meta tags (Title or Description).');
+        scores.seo -= 40;
+    }
+
+    return {
+        performance: scores.performance,
+        seo: scores.seo,
+        accessibility: scores.accessibility,
+        analysis: analysis.join('\\n'),
+        status: (scores.seo > 50) ? 'Qualified' : 'Failed'
+    };
+}"; ?></textarea>
+                                        <div class="form-text extra-small text-muted mt-1">Write a function that returns an object with performance, seo, accessibility, analysis, and status.</div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="mt-4 pt-3 border-top">
                                 <button type="submit" class="btn btn-primary-custom px-4">Save Platform Limits</button>
                             </div>
@@ -272,8 +338,8 @@ document.addEventListener('DOMContentLoaded', function() {
             data[checkbox.name] = checkbox.checked;
         });
         
-        // Handle other inputs
-        form.querySelectorAll('input:not([type="checkbox"])').forEach(input => {
+        // Handle other inputs and textareas
+        form.querySelectorAll('input:not([type="checkbox"]), textarea').forEach(input => {
             data[input.name] = input.value;
         });
 

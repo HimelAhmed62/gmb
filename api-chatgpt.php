@@ -44,10 +44,20 @@ include 'includes/header.php';
                     
                     <div class="mb-4" id="modelSelectionWrapper">
                         <label class="form-label fw-bold small text-muted">Model Selection</label>
-                        <select name="model" class="form-select form-control-custom fw-medium" disabled>
-                            <option value="">Test API to load available models...</option>
+                        <select name="model" class="form-select form-control-custom fw-medium" <?php echo !($_SESSION['chatgpt_connected'] ?? false) ? 'disabled' : ''; ?>>
+                            <?php if ($_SESSION['chatgpt_model'] ?? false): ?>
+                                <option value="<?php echo $_SESSION['chatgpt_model']; ?>" selected><?php echo $_SESSION['chatgpt_model']; ?></option>
+                            <?php else: ?>
+                                <option value="">Test API to load available models...</option>
+                            <?php endif; ?>
                         </select>
                         <div id="modelLoadStatus" class="form-text extra-small text-muted mt-1"><i data-lucide="info" style="width: 12px; height: 12px;"></i> Models are fetched dynamically from your OpenAI account.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold small text-muted">Research Instructions (Custom Prompt)</label>
+                        <textarea name="research_instructions" class="form-control form-control-custom small" rows="4" placeholder="Example: Analyze the website's SEO, loading speed, and mobile responsiveness. Provide specific suggestions..."><?php echo $_SESSION['chatgpt_prompt'] ?? ''; ?></textarea>
+                        <div class="form-text extra-small text-muted mt-1"><i data-lucide="info" style="width: 12px; height: 12px;"></i> This prompt will be used to guide the AI during the website audit.</div>
                     </div>
 
                     <div class="d-flex gap-2 pt-2 border-top">
