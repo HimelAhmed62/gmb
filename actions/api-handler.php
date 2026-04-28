@@ -96,6 +96,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    if ($api === 'chatgpt' && $action === 'chat') {
+        header('Content-Type: application/json');
+        $message = $_POST['message'] ?? 'Hi';
+        $model = $_POST['model'] ?? 'gpt-3.5-turbo';
+
+        $url = "https://api.openai.com/v1/chat/completions";
+        $payload = json_encode([
+            "model" => $model,
+            "messages" => [["role" => "user", "content" => $message]],
+            "max_tokens" => 100
+        ]);
+
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $apiKey
+        ]);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+        
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode === 200) {
+            $data = json_decode($response, true);
+            $reply = $data['choices'][0]['message']['content'] ?? 'No response content.';
+            echo json_encode(['success' => true, 'response' => $reply]);
+        } else {
+            $errorData = json_decode($response, true);
+            $errorMsg = $errorData['error']['message'] ?? 'Chat Error (HTTP ' . $httpCode . ')';
+            echo json_encode(['success' => false, 'message' => $errorMsg]);
+        }
+        exit;
+    }
+
     if ($api === 'gemini' && $action === 'verify') {
         header('Content-Type: application/json');
         if (empty($apiKey)) {

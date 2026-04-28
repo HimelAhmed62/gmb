@@ -63,12 +63,31 @@ include 'includes/header.php';
     </div>
 
     <div class="col-lg-4">
-        <div class="premium-card">
+        <div class="premium-card mb-4">
             <div class="card-header-custom border-bottom pb-2">
                 <h6 class="fw-bold mb-0">Usage Limits</h6>
             </div>
             <div class="card-body-custom">
                 <p class="text-muted small mb-0">OpenAI usage is billed based on your account's credit balance. Ensure your billing is active at <a href="https://platform.openai.com/billing" target="_blank" class="text-decoration-none">OpenAI Billing</a>.</p>
+            </div>
+        </div>
+
+        <!-- Live Chat Test -->
+        <div class="premium-card" id="chatTestCard" style="display: <?php echo ($_SESSION['chatgpt_connected'] ?? false) ? 'block' : 'none'; ?>;">
+            <div class="card-header-custom border-bottom pb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-primary bg-opacity-10 p-2 rounded-2 text-primary"><i data-lucide="messages-square" style="width: 18px; height: 18px;"></i></div>
+                    <h6 class="fw-bold mb-0">Live Test Chat</h6>
+                </div>
+            </div>
+            <div class="card-body-custom">
+                <div id="chatWindow" class="bg-light rounded-3 p-3 mb-3 font-monospace small text-muted" style="height: 180px; overflow-y: auto; border: 1px inset rgba(0,0,0,0.05);">
+                    <div class="mb-2">System: API ready. Send a message to test.</div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="chatInput" class="form-control form-control-custom" placeholder="Say hi...">
+                    <button class="btn btn-primary-custom" type="button" id="sendChatBtn">Send</button>
+                </div>
             </div>
         </div>
     </div>
@@ -130,6 +149,9 @@ document.getElementById('testChatBtn').addEventListener('click', function() {
                 });
                 document.getElementById('modelLoadStatus').innerHTML = `<i data-lucide="check" class="text-success" style="width: 12px; height: 12px;"></i> Models loaded.`;
                 lucide.createIcons();
+                
+                // Show Chat Test Card
+                document.getElementById('chatTestCard').style.display = 'block';
             }
         } else {
             showToast(result.message, 'danger');
@@ -141,6 +163,58 @@ document.getElementById('testChatBtn').addEventListener('click', function() {
         this.disabled = false;
         this.innerHTML = originalText;
         showToast(error.message, 'danger');
+    });
+});
+
+// Chat Test Logic
+document.getElementById('sendChatBtn').addEventListener('click', function() {
+    const chatInput = document.getElementById('chatInput');
+    const chatWindow = document.getElementById('chatWindow');
+    const apiKey = document.querySelector('input[name="api_key"]').value.trim();
+    const model = document.querySelector('select[name="model"]').value || 'gpt-3.5-turbo';
+    const msg = chatInput.value.trim();
+
+    if (!msg) return;
+
+    // Append User Message
+    chatWindow.innerHTML += `<div class="mb-2 text-dark"><strong>You:</strong> ${msg}</div>`;
+    chatInput.value = '';
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+
+    const originalBtn = this.innerHTML;
+    this.disabled = true;
+    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    const formData = new FormData();
+    formData.append('api', 'chatgpt');
+    formData.append('action', 'chat');
+    formData.append('api_key', apiKey);
+    formData.append('model', model);
+    formData.append('message', msg);
+
+    fetch('actions/api-handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(async response => {
+        const text = await response.text();
+        try { return JSON.parse(text); } catch(e) { throw new Error(text); }
+    })
+    .then(result => {
+        this.disabled = false;
+        this.innerHTML = originalBtn;
+        if (result.success) {
+            chatWindow.innerHTML += `<div class="mb-2 text-primary"><strong>GPT:</strong> ${result.response}</div>`;
+        } else {
+            chatWindow.innerHTML += `<div class="mb-2 text-danger"><strong>Error:</strong> ${result.message}</div>`;
+        }
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    })
+    .catch(error => {
+        this.disabled = false;
+        this.innerHTML = originalBtn;
+        chatWindow.innerHTML += `<div class="mb-2 text-danger"><strong>System Error:</strong> ${error.message}</div>`;
+        chatWindow.scrollTop = chatWindow.scrollHeight;
     });
 });
 
