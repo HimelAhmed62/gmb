@@ -9,6 +9,17 @@ ini_set('error_log', '../debug.log');
 
 header('Content-Type: application/json');
 
+// Auto-fix: Ensure Database columns exist
+try {
+    $pdo->exec("ALTER TABLE leads ADD COLUMN IF NOT EXISTS scores TEXT AFTER score");
+    $pdo->exec("ALTER TABLE leads ADD COLUMN IF NOT EXISTS metadata TEXT AFTER scores");
+    $pdo->exec("ALTER TABLE leads MODIFY COLUMN status ENUM('Pending', 'Preparing', 'Ready', 'Contacted', 'Qualified', 'Failed') DEFAULT 'Pending'");
+} catch (Exception $e) {
+    // If IF NOT EXISTS is not supported, we attempt to add columns manually
+    try { $pdo->exec("ALTER TABLE leads ADD scores TEXT AFTER score"); } catch(Exception $ex) {}
+    try { $pdo->exec("ALTER TABLE leads ADD metadata TEXT AFTER scores"); } catch(Exception $ex) {}
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
     exit;
@@ -81,6 +92,16 @@ if ($aiType === 'manual_fetch') {
 
 if ($aiType === 'manual_save') {
     try {
+        // Auto-fix: Check and add missing columns
+        try {
+            $pdo->exec("ALTER TABLE leads ADD COLUMN IF NOT EXISTS scores TEXT AFTER score");
+            $pdo->exec("ALTER TABLE leads ADD COLUMN IF NOT EXISTS metadata TEXT AFTER scores");
+            $pdo->exec("ALTER TABLE leads MODIFY COLUMN status ENUM('Pending', 'Preparing', 'Ready', 'Contacted', 'Qualified', 'Failed') DEFAULT 'Pending'");
+        } catch (Exception $dbFixError) {
+            // Some MySQL versions don't support ADD COLUMN IF NOT EXISTS
+            // We can ignore errors here as long as the columns end up existing
+        }
+
         $results = json_decode($_POST['results'] ?? '{}', true);
         $scores = json_encode([
             'performance' => $results['performance'] ?? 50,
@@ -91,7 +112,6 @@ if ($aiType === 'manual_save') {
         $status = $results['status'] ?? 'Qualified';
         $score = $results['seo'] ?? 50;
         
-        // Handle metadata safely
         $existingMetadata = $lead['metadata'] ?? '';
         $metadata = [];
         if (!empty($existingMetadata)) {
