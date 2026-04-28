@@ -5,30 +5,33 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once 'db.php';
 
-// Load global settings
-$settingsFile = __DIR__ . '/../data/settings.json';
-if (file_exists($settingsFile)) {
-    $_SESSION['settings'] = json_decode(file_get_contents($settingsFile), true) ?? [];
-} else {
-    $_SESSION['settings'] = [
-        'daily_limit' => 500,
-        'delay_between_messages' => 45,
-        'email_notifications' => true,
-        'whatsapp_notifications' => true,
-        'browser_notifications' => true,
-        'low_credit_alert' => true
-    ];
-}
+// Load global settings and connection statuses from Database
+try {
+    $dbSettings = $pdo->query("SELECT setting_key, setting_value FROM settings")->fetchAll(PDO::FETCH_KEY_PAIR);
+    
+    // Sync to session for easy access in UI
+    foreach ($dbSettings as $key => $val) {
+        // Special handling for boolean-like connection flags
+        if (strpos($key, '_connected') !== false) {
+            $_SESSION[$key] = (bool)$val;
+        } else {
+            $_SESSION[$key] = $val;
+        }
+    }
 
-// Initialize default connection statuses if not set
-if (!isset($_SESSION['gmail_connected'])) {
-    $_SESSION['gmail_connected'] = true; // Default state
-}
-if (!isset($_SESSION['whatsapp_connected'])) {
-    $_SESSION['whatsapp_connected'] = true; // Default state
-}
-if (!isset($_SESSION['gemini_connected'])) {
-    $_SESSION['gemini_connected'] = false; // Default state
+    // Ensure defaults if keys are missing
+    $defaults = [
+        'gmail_connected' => false,
+        'whatsapp_connected' => false,
+        'gemini_connected' => false,
+        'chatgpt_connected' => false
+    ];
+    foreach ($defaults as $key => $val) {
+        if (!isset($_SESSION[$key])) $_SESSION[$key] = $val;
+    }
+
+} catch (Exception $e) {
+    // If DB fails, use offline defaults
 }
 
 // Flash message handling

@@ -132,16 +132,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($api) {
         if ($action === 'connect') {
-            if ($api === 'gmail') $_SESSION['gmail_connected'] = true;
-            if ($api === 'whatsapp') $_SESSION['whatsapp_connected'] = true;
+            $stmt = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            
+            if ($api === 'gmail') {
+                $_SESSION['gmail_connected'] = true;
+                $stmt->execute(['gmail_connected', '1', '1']);
+            }
+            if ($api === 'whatsapp') {
+                $_SESSION['whatsapp_connected'] = true;
+                $stmt->execute(['whatsapp_connected', '1', '1']);
+            }
             if ($api === 'gemini') {
                 $_SESSION['gemini_connected'] = true;
                 $_SESSION['gemini_api_key'] = $apiKey;
+                $stmt->execute(['gemini_connected', '1', '1']);
+                $stmt->execute(['gemini_api_key', $apiKey, $apiKey]);
             }
             if ($api === 'chatgpt') {
                 $_SESSION['chatgpt_connected'] = true;
                 $_SESSION['chatgpt_api_key'] = $apiKey;
-                $_SESSION['chatgpt_model'] = $_POST['model'] ?? 'gpt-3.5-turbo';
+                $model = $_POST['model'] ?? 'gpt-3.5-turbo';
+                $_SESSION['chatgpt_model'] = $model;
+                $stmt->execute(['chatgpt_connected', '1', '1']);
+                $stmt->execute(['chatgpt_api_key', $apiKey, $apiKey]);
+                $stmt->execute(['chatgpt_model', $model, $model]);
             }
             set_flash_message(ucfirst($api) . " connected successfully", "success");
         }
