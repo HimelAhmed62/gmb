@@ -3,7 +3,7 @@ require_once 'includes/config.php';
 
 // Fetch leads from Database
 try {
-    $pendingStmt = $pdo->query("SELECT * FROM leads WHERE status = 'Preparing' ORDER BY id DESC");
+    $pendingStmt = $pdo->query("SELECT * FROM leads WHERE status = 'Pending' ORDER BY id DESC");
     $pendingLeads = $pendingStmt->fetchAll(PDO::FETCH_ASSOC);
 
     $readyStmt = $pdo->query("SELECT * FROM leads WHERE status IN ('Ready', 'Qualified', 'Failed') ORDER BY id DESC");
@@ -90,9 +90,9 @@ include 'includes/header.php';
                             <div class="bg-white p-3 rounded-4 border shadow-sm mb-3 d-flex align-items-center justify-content-between">
                                 <div>
                                     <p class="text-muted small fw-bold mb-0 text-uppercase">Leads to Process</p>
-                                    <p class="text-dark extra-small mb-0">Max: <?php echo count($pendingLeads); ?></p>
+                                    <p class="text-dark extra-small mb-0">Max: <?php echo min(50, count($pendingLeads)); ?></p>
                                 </div>
-                                <input type="number" id="processCount" class="form-control form-control-custom text-center fw-bold w-50 fs-5 text-primary" value="<?php echo $targetId ? '1' : min(10, count($pendingLeads)); ?>" min="1" max="<?php echo count($pendingLeads); ?>">
+                                <input type="number" id="processCount" class="form-control form-control-custom text-center fw-bold w-50 fs-5 text-primary" value="<?php echo $targetId ? '1' : min(15, count($pendingLeads)); ?>" min="1" max="<?php echo min(50, count($pendingLeads)); ?>">
                             </div>
                             <button id="startProcessBtn" class="btn btn-primary w-100 py-3 fw-bold rounded-4 shadow d-flex align-items-center justify-content-center gap-2" <?php echo count($pendingLeads) === 0 ? 'disabled' : ''; ?> style="transition: all 0.3s ease;">
                                 <i data-lucide="zap" style="width: 20px; height: 20px;"></i> 
@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('processingArea').classList.remove('d-none');
 
             // 1. Get lead IDs to process securely
-            const pendingLeads = <?php echo json_encode(array_slice($pendingLeads, 0, 100), JSON_INVALID_UTF8_SUBSTITUTE) ?: '[]'; ?>;
+            const pendingLeads = <?php echo json_encode(array_slice($pendingLeads, 0, 50), JSON_INVALID_UTF8_SUBSTITUTE) ?: '[]'; ?>;
             const processList = pendingLeads.slice(0, count);
             
             if (processList.length === 0) {
