@@ -44,6 +44,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? 'connect';
     $apiKey = $_POST['api_key'] ?? '';
     
+    // If the API key is the placeholder, use the one from the session/database
+    $placeholders = [
+        'sk-proj-xxxxxxxxxxxxxxxxxxxxxxx',
+        'AIzaSyB-xxxxxxxxxxxxxxxxxxxxxxx',
+        'EAABxxxxxxxxxxxxxxxxxxxxxxx',
+        'GOCSPX-xxxxxxxxxxxx',
+        '123456-abcde.apps.googleusercontent.com'
+    ];
+    if (in_array($apiKey, $placeholders)) {
+        if ($api === 'chatgpt') $apiKey = $_SESSION['chatgpt_api_key'] ?? '';
+        if ($api === 'gemini') $apiKey = $_SESSION['gemini_api_key'] ?? '';
+        if ($api === 'whatsapp') $apiKey = $_SESSION['whatsapp_access_token'] ?? '';
+        // Add more as needed
+    }
+    
     if ($api === 'chatgpt' && $action === 'verify') {
         header('Content-Type: application/json');
         if (empty($apiKey)) {
