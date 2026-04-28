@@ -2,7 +2,7 @@
 // Database Connection Configuration
 // Railway provides connection details via environment variables
 
-$db_host = getenv('MYSQLHOST') ?: 'localhost';
+$db_host = getenv('MYSQLHOST') ?: '127.0.0.1';
 $db_user = getenv('MYSQLUSER') ?: 'root';
 $db_pass = getenv('MYSQLPASSWORD') ?: '';
 $db_name = getenv('MYSQLDATABASE') ?: 'gmb_audit';
