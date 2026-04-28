@@ -175,7 +175,20 @@ try {
     else if (html.includes('bitrix')) cms = 'Bitrix';
     analysis.push('CMS Detected: ' + cms);
 
-    // 2. Performance / Loading Speed (Estimated)
+    // 2. Contact Information Scraper
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/g;
+    const phoneRegex = /\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}/g;
+    
+    let emails = [...new Set(html.match(emailRegex) || [])];
+    let phones = [...new Set(html.match(phoneRegex) || [])].filter(p => p.length > 8);
+    
+    if (emails.length > 0) analysis.push('Emails Found: ' + emails.join(', '));
+    else analysis.push('Emails: None found on homepage.');
+    
+    if (phones.length > 0) analysis.push('Phone Numbers: ' + phones.join(', '));
+    else analysis.push('Phones: None found on homepage.');
+
+    // 3. Performance / Loading Speed (Estimated)
     let size = html.length / 1024; // KB
     let speedScore = 100 - (size / 10);
     scores.performance = Math.max(10, Math.min(99, Math.round(speedScore)));
