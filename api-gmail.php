@@ -20,8 +20,8 @@ include 'includes/header.php';
                     <div class="bg-danger bg-opacity-10 shadow-sm p-2 rounded-3 text-danger"><i data-lucide="mail" style="width: 24px; height: 24px;"></i></div>
                     <div>
                         <h5 class="fw-bold mb-0">Google OAuth Configuration</h5>
-                        <span id="statusBadge" class="badge <?php echo $_SESSION['gmail_connected'] ? 'badge-soft-success' : 'badge-soft-danger'; ?> rounded-pill mt-1">
-                            Status: <?php echo $_SESSION['gmail_connected'] ? 'Connected' : 'Disconnected'; ?>
+                        <span id="statusBadge" class="badge <?php echo ($_SESSION['gmail_connected'] ?? false) ? 'badge-soft-success' : 'badge-soft-danger'; ?> rounded-pill mt-1">
+                            Status: <?php echo ($_SESSION['gmail_connected'] ?? false) ? 'Connected' : 'Disconnected'; ?>
                         </span>
                     </div>
                 </div>
@@ -35,12 +35,12 @@ include 'includes/header.php';
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">Google Client ID</label>
-                        <input type="text" name="client_id" class="form-control form-control-custom font-monospace" value="<?php echo $_SESSION['gmail_connected'] ? '123456-abcde.apps.googleusercontent.com' : ''; ?>" placeholder="e.g. 123456-abcde.apps.googleusercontent.com">
+                        <input type="text" name="client_id" class="form-control form-control-custom font-monospace" value="<?php echo ($_SESSION['gmail_connected'] ?? false) ? '123456-abcde.apps.googleusercontent.com' : ''; ?>" placeholder="e.g. 123456-abcde.apps.googleusercontent.com">
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">Google Client Secret</label>
-                        <input type="password" name="client_secret" class="form-control form-control-custom font-monospace" value="<?php echo $_SESSION['gmail_connected'] ? 'GOCSPX-xxxxxxxxxxxx' : ''; ?>" placeholder="Enter Client Secret">
+                        <input type="password" name="client_secret" class="form-control form-control-custom font-monospace" value="<?php echo ($_SESSION['gmail_connected'] ?? false) ? 'GOCSPX-xxxxxxxxxxxx' : ''; ?>" placeholder="Enter Client Secret">
                     </div>
 
                     <div class="mb-4 p-3 bg-light rounded-3 border">
@@ -54,7 +54,7 @@ include 'includes/header.php';
 
                     <div class="d-flex gap-2 pt-2 border-top">
                         <button type="submit" class="btn btn-primary-custom flex-grow-1">Save & Connect</button>
-                        <?php if ($_SESSION['gmail_connected']): ?>
+                        <?php if ($_SESSION['gmail_connected'] ?? false): ?>
                         <a href="actions/api-handler.php?action=disconnect&api=gmail" class="btn btn-outline-danger">Disconnect Account</a>
                         <?php endif; ?>
                     </div>
@@ -69,7 +69,7 @@ include 'includes/header.php';
                 <h6 class="fw-bold mb-0">Account Info</h6>
             </div>
             <div class="card-body-custom">
-                <?php if ($_SESSION['gmail_connected']): ?>
+                <?php if ($_SESSION['gmail_connected'] ?? false): ?>
                 <div id="accountInfo">
                     <div class="d-flex align-items-center gap-3 mb-4">
                         <div class="rounded-circle bg-light d-flex justify-content-center align-items-center fw-bold text-dark" style="width: 48px; height: 48px;">G</div>

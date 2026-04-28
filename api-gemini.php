@@ -30,7 +30,7 @@ include 'includes/header.php';
     <p class="text-muted mb-0">Configure your AI model settings for auditing and content generation.</p>
 </div>
 
-<?php if (!$_SESSION['gemini_connected']): ?>
+<?php if (!($_SESSION['gemini_connected'] ?? false)): ?>
 <div class="alert alert-info border-0 shadow-sm rounded-4 p-4 mb-4 d-flex align-items-center gap-4">
     <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle">
         <i data-lucide="info" style="width: 24px; height: 24px;"></i>
@@ -51,8 +51,8 @@ include 'includes/header.php';
                     <div class="bg-primary bg-opacity-10 shadow-sm p-2 rounded-3" style="color: #4285F4;"><i data-lucide="sparkles" style="width: 24px; height: 24px;"></i></div>
                     <div>
                         <h5 class="fw-bold mb-0">Gemini Configuration</h5>
-                        <span id="statusBadge" class="badge <?php echo $_SESSION['gemini_connected'] ? 'badge-soft-success' : 'badge-soft-danger'; ?> rounded-pill mt-1">
-                            Status: <?php echo $_SESSION['gemini_connected'] ? 'Connected' : 'Not Connected'; ?>
+                        <span id="statusBadge" class="badge <?php echo ($_SESSION['gemini_connected'] ?? false) ? 'badge-soft-success' : 'badge-soft-danger'; ?> rounded-pill mt-1">
+                            Status: <?php echo ($_SESSION['gemini_connected'] ?? false) ? 'Connected' : 'Not Connected'; ?>
                         </span>
                     </div>
                 </div>
@@ -67,7 +67,7 @@ include 'includes/header.php';
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">Gemini API Key</label>
                         <div class="input-group">
-                            <input type="password" name="api_key" class="form-control form-control-custom font-monospace" value="<?php echo $_SESSION['gemini_connected'] ? 'AIzaSyB-xxxxxxxxxxxxxxxxxxxxxxx' : ''; ?>" placeholder="Enter your API key">
+                            <input type="password" name="api_key" class="form-control form-control-custom font-monospace" value="<?php echo ($_SESSION['gemini_connected'] ?? false) ? 'AIzaSyB-xxxxxxxxxxxxxxxxxxxxxxx' : ''; ?>" placeholder="Enter your API key">
                             <button class="btn btn-outline-custom border-start-0 text-primary" type="button" onclick="const p = this.previousElementSibling; p.type = p.type === 'password' ? 'text' : 'password';"><i data-lucide="eye" style="width: 18px; height: 18px;"></i></button>
                         </div>
                         <div class="form-text small">Get your API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-decoration-none fw-bold">Google AI Studio</a>.</div>
@@ -84,7 +84,7 @@ include 'includes/header.php';
                     <div class="d-flex gap-2 pt-2 border-top">
                         <button type="button" id="testConnectionBtn" class="btn btn-outline-custom">Test Connection</button>
                         <button type="submit" class="btn btn-primary-custom flex-grow-1">Save & Connect</button>
-                        <?php if ($_SESSION['gemini_connected']): ?>
+                        <?php if ($_SESSION['gemini_connected'] ?? false): ?>
                         <a href="actions/api-handler.php?action=disconnect&api=gemini" class="btn btn-outline-danger">Disconnect</a>
                         <?php endif; ?>
                     </div>
@@ -98,7 +98,7 @@ include 'includes/header.php';
             <div class="card-header-custom border-bottom pb-2">
                 <h6 class="fw-bold mb-0">API Usage</h6>
             </div>
-            <?php if ($_SESSION['gemini_connected']): ?>
+            <?php if ($_SESSION['gemini_connected'] ?? false): ?>
             <div class="card-body-custom" id="usageInfo">
                 <div class="p-3 bg-light rounded-3 border">
                     <div class="d-flex justify-content-between mb-1">

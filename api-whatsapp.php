@@ -20,8 +20,8 @@ include 'includes/header.php';
                     <div class="bg-success bg-opacity-10 shadow-sm p-2 rounded-3 text-success"><i data-lucide="message-circle" style="width: 24px; height: 24px;"></i></div>
                     <div>
                         <h5 class="fw-bold mb-0">WhatsApp Configuration</h5>
-                        <span id="statusBadge" class="badge <?php echo $_SESSION['whatsapp_connected'] ? 'badge-soft-success' : 'badge-soft-danger'; ?> rounded-pill mt-1">
-                            Status: <?php echo $_SESSION['whatsapp_connected'] ? 'Active' : 'Disconnected'; ?>
+                        <span id="statusBadge" class="badge <?php echo ($_SESSION['whatsapp_connected'] ?? false) ? 'badge-soft-success' : 'badge-soft-danger'; ?> rounded-pill mt-1">
+                            Status: <?php echo ($_SESSION['whatsapp_connected'] ?? false) ? 'Active' : 'Disconnected'; ?>
                         </span>
                     </div>
                 </div>
@@ -35,17 +35,17 @@ include 'includes/header.php';
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">System User Access Token (Permanent)</label>
-                        <input type="password" name="access_token" class="form-control form-control-custom font-monospace" value="<?php echo $_SESSION['whatsapp_connected'] ? 'EAABxxxxxxxxxxxxxxxxxxxxxxx' : ''; ?>" placeholder="Enter Access Token">
+                        <input type="password" name="access_token" class="form-control form-control-custom font-monospace" value="<?php echo ($_SESSION['whatsapp_connected'] ?? false) ? 'EAABxxxxxxxxxxxxxxxxxxxxxxx' : ''; ?>" placeholder="Enter Access Token">
                     </div>
                     
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-muted">Phone Number ID</label>
-                            <input type="text" name="phone_id" class="form-control form-control-custom font-monospace" value="<?php echo $_SESSION['whatsapp_connected'] ? '123456789012345' : ''; ?>" placeholder="e.g. 123456789012345">
+                            <input type="text" name="phone_id" class="form-control form-control-custom font-monospace" value="<?php echo ($_SESSION['whatsapp_connected'] ?? false) ? '123456789012345' : ''; ?>" placeholder="e.g. 123456789012345">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-muted">WABA ID</label>
-                            <input type="text" name="waba_id" class="form-control form-control-custom font-monospace" value="<?php echo $_SESSION['whatsapp_connected'] ? '987654321098765' : ''; ?>" placeholder="WhatsApp Business Account ID">
+                            <input type="text" name="waba_id" class="form-control form-control-custom font-monospace" value="<?php echo ($_SESSION['whatsapp_connected'] ?? false) ? '987654321098765' : ''; ?>" placeholder="WhatsApp Business Account ID">
                         </div>
                     </div>
 
@@ -56,7 +56,7 @@ include 'includes/header.php';
 
                     <div class="d-flex gap-2 pt-2 border-top">
                         <button type="submit" class="btn btn-primary-custom flex-grow-1">Save Configuration</button>
-                        <?php if ($_SESSION['whatsapp_connected']): ?>
+                        <?php if ($_SESSION['whatsapp_connected'] ?? false): ?>
                         <a href="actions/api-handler.php?action=disconnect&api=whatsapp" class="btn btn-outline-danger">Disconnect Account</a>
                         <?php endif; ?>
                     </div>
@@ -70,7 +70,7 @@ include 'includes/header.php';
             <div class="card-header-custom border-bottom pb-2">
                 <h6 class="fw-bold mb-0">Platform Info</h6>
             </div>
-            <?php if ($_SESSION['whatsapp_connected']): ?>
+            <?php if ($_SESSION['whatsapp_connected'] ?? false): ?>
             <div class="card-body-custom" id="platformInfo">
                 <div class="p-3 bg-light rounded-3 border mb-3">
                     <p class="text-uppercase text-muted small fw-bold mb-1" style="font-size: 10px;">Message Templates</p>

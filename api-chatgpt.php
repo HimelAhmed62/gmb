@@ -20,8 +20,8 @@ include 'includes/header.php';
                     <div class="bg-success bg-opacity-10 shadow-sm p-2 rounded-3" style="color: #10a37f;"><i data-lucide="brain" style="width: 24px; height: 24px;"></i></div>
                     <div>
                         <h5 class="fw-bold mb-0">ChatGPT Configuration</h5>
-                        <span id="statusBadge" class="badge <?php echo $_SESSION['chatgpt_connected'] ? 'badge-soft-success' : 'badge-soft-danger'; ?> rounded-pill mt-1">
-                            Status: <?php echo $_SESSION['chatgpt_connected'] ? 'Connected' : 'Not Connected'; ?>
+                        <span id="statusBadge" class="badge <?php echo ($_SESSION['chatgpt_connected'] ?? false) ? 'badge-soft-success' : 'badge-soft-danger'; ?> rounded-pill mt-1">
+                            Status: <?php echo ($_SESSION['chatgpt_connected'] ?? false) ? 'Connected' : 'Not Connected'; ?>
                         </span>
                     </div>
                 </div>
@@ -36,7 +36,7 @@ include 'includes/header.php';
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted">OpenAI API Key</label>
                         <div class="input-group">
-                            <input type="password" name="api_key" class="form-control form-control-custom font-monospace" value="<?php echo $_SESSION['chatgpt_connected'] ? 'sk-proj-xxxxxxxxxxxxxxxxxxxxxxx' : ''; ?>" placeholder="sk-...">
+                            <input type="password" name="api_key" class="form-control form-control-custom font-monospace" value="<?php echo ($_SESSION['chatgpt_connected'] ?? false) ? 'sk-proj-xxxxxxxxxxxxxxxxxxxxxxx' : ''; ?>" placeholder="sk-...">
                             <button class="btn btn-outline-custom border-start-0 text-primary" type="button" onclick="const p = this.previousElementSibling; p.type = p.type === 'password' ? 'text' : 'password';"><i data-lucide="eye" style="width: 18px; height: 18px;"></i></button>
                         </div>
                         <div class="form-text small">Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank" class="text-decoration-none fw-bold">OpenAI Dashboard</a>.</div>
@@ -53,7 +53,7 @@ include 'includes/header.php';
                     <div class="d-flex gap-2 pt-2 border-top">
                         <button type="button" id="testChatBtn" class="btn btn-outline-custom">Test API</button>
                         <button type="submit" class="btn btn-primary-custom flex-grow-1">Save & Connect</button>
-                        <?php if ($_SESSION['chatgpt_connected']): ?>
+                        <?php if ($_SESSION['chatgpt_connected'] ?? false): ?>
                         <a href="actions/api-handler.php?action=disconnect&api=chatgpt" class="btn btn-outline-danger">Disconnect</a>
                         <?php endif; ?>
                     </div>
