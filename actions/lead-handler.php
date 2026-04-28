@@ -96,20 +96,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Load existing leads
-        $existingLeads = [];
-        if (file_exists($leadsFile)) {
-            $existingLeads = json_decode(file_get_contents($leadsFile), true) ?? [];
+        // Insert into MySQL
+        $stmt = $pdo->prepare("INSERT INTO leads (company_name, website, email, phone, contact_name, status) VALUES (?, ?, ?, ?, ?, ?)");
+        $count = 0;
+        foreach ($newLeads as $l) {
+            $stmt->execute([
+                $l['company_name'],
+                $l['website'],
+                $l['email'],
+                $l['phone'],
+                $l['contact_name'],
+                'Pending'
+            ]);
+            $count++;
         }
-
-        // Merge and save
-        $allLeads = array_merge($existingLeads, $newLeads);
-        file_put_contents($leadsFile, json_encode($allLeads, JSON_PRETTY_PRINT));
 
         echo json_encode([
             'success' => true, 
-            'message' => count($newLeads) . ' leads uploaded successfully!',
-            'count' => count($newLeads)
+            'message' => $count . ' leads uploaded successfully!',
+            'count' => $count
         ]);
         exit;
     }
@@ -117,26 +122,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Manual entry
     $data = json_decode(file_get_contents('php://input'), true);
     if ($data && isset($data['company_name'])) {
-        $existingLeads = [];
-        if (file_exists($leadsFile)) {
-            $existingLeads = json_decode(file_get_contents($leadsFile), true) ?? [];
-        }
-
-        $newLead = [
-            'id' => uniqid(),
-            'company_name' => $data['company_name'],
-            'website' => $data['website'] ?? '',
-            'email' => '',
-            'phone' => '',
-            'contact_name' => '',
-            'status' => 'Pending',
-            'score' => 0,
-            'created_at' => date('Y-m-d H:i:s'),
-            'last_outreach' => 'Never'
-        ];
-
-        $existingLeads[] = $newLead;
-        file_put_contents($leadsFile, json_encode($existingLeads, JSON_PRETTY_PRINT));
+        $stmt = $pdo->prepare("INSERT INTO leads (company_name, website, status) VALUES (?, ?, ?)");
+        $stmt->execute([
+            $data['company_name'],
+            $data['website'] ?? '',
+            'Pending'
+        ]);
 
         echo json_encode(['success' => true, 'message' => 'Lead added successfully!']);
         exit;

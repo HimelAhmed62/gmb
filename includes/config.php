@@ -1,5 +1,9 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once 'db.php';
 
 // Load global settings
 $settingsFile = __DIR__ . '/../data/settings.json';

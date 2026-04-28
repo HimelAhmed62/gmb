@@ -11,27 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $leadsFile = '../data/leads.json';
-    if (file_exists($leadsFile)) {
-        $leads = json_decode(file_get_contents($leadsFile), true) ?? [];
-        $found = false;
-        
-        foreach ($leads as &$lead) {
-            if ($lead['id'] === $id) {
-                $lead['status'] = $newStatus;
-                $found = true;
-                break;
-            }
-        }
-        
-        if ($found) {
-            file_put_contents($leadsFile, json_encode($leads, JSON_PRETTY_PRINT));
-            echo json_encode(['success' => true]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Lead not found']);
-        }
+    $stmt = $pdo->prepare("UPDATE leads SET status = ? WHERE id = ?");
+    if ($stmt->execute([$newStatus, $id])) {
+        echo json_encode(['success' => true]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Leads file not found']);
+        echo json_encode(['success' => false, 'message' => 'Failed to update lead status']);
     }
     exit;
 }

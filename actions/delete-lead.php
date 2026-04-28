@@ -14,27 +14,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if (file_exists($leadsFile)) {
-        $leads = json_decode(file_get_contents($leadsFile), true) ?? [];
-        $originalCount = count($leads);
-        
-        $leads = array_filter($leads, function($lead) use ($idsToDelete) {
-            return !in_array($lead['id'], $idsToDelete);
-        });
-
-        // Re-index array
-        $leads = array_values($leads);
-        
-        if (file_put_contents($leadsFile, json_encode($leads, JSON_PRETTY_PRINT))) {
-            echo json_encode([
-                'success' => true, 
-                'message' => ($originalCount - count($leads)) . ' leads deleted successfully.'
-            ]);
-        } else {
-            echo json_encode(['success' => false, 'message' => 'Failed to update leads file.']);
-        }
+    $placeholders = implode(',', array_fill(0, count($idsToDelete), '?'));
+    $stmt = $pdo->prepare("DELETE FROM leads WHERE id IN ($placeholders)");
+    
+    if ($stmt->execute($idsToDelete)) {
+        echo json_encode([
+            'success' => true, 
+            'message' => count($idsToDelete) . ' leads deleted successfully.'
+        ]);
     } else {
-        echo json_encode(['success' => false, 'message' => 'Leads file not found.']);
+        echo json_encode(['success' => false, 'message' => 'Failed to delete leads from database.']);
     }
     exit;
 }

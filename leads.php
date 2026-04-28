@@ -3,15 +3,7 @@ require_once 'includes/config.php';
 $pageTitle = 'Leads Table';
 include 'includes/header.php'; 
 
-$leadsFile = 'data/leads.json';
-$leads = [];
-if (file_exists($leadsFile)) {
-    $leads = json_decode(file_get_contents($leadsFile), true) ?? [];
-}
-// Sort by created_at descending
-usort($leads, function($a, $b) {
-    return strtotime($b['created_at']) - strtotime($a['created_at']);
-});
+$leads = $pdo->query("SELECT * FROM leads ORDER BY created_at DESC")->fetchAll();
 ?>
 
 <div class="mb-4 d-flex justify-content-between align-items-center">
