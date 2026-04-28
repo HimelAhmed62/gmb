@@ -64,17 +64,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
+
+        if ($response === false) {
+            echo json_encode(['success' => false, 'message' => 'Network Error: ' . $curlError]);
+            exit;
+        }
 
         if ($httpCode === 200) {
             $data = json_decode($response, true);
             $models = [];
-            foreach ($data['data'] as $model) {
-                if (strpos($model['id'], 'gpt-') === 0) {
-                    $models[] = $model['id'];
+            if (isset($data['data']) && is_array($data['data'])) {
+                foreach ($data['data'] as $model) {
+                    if (isset($model['id']) && strpos($model['id'], 'gpt-') === 0) {
+                        $models[] = $model['id'];
+                    }
                 }
             }
             sort($models);
+            
+            // If no gpt- models found, provide defaults
+            if (empty($models)) {
+                $models = ['gpt-3.5-turbo', 'gpt-4', 'gpt-4o'];
+            }
+
             echo json_encode(['success' => true, 'message' => 'OpenAI API Key is valid.', 'models' => $models]);
         } else {
             $errorData = json_decode($response, true);
