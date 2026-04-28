@@ -249,7 +249,7 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
 
 <script>
 // Load the custom script from the database
-const customAuditScript = `<?php echo addslashes($_SESSION['manual_audit_script'] ?? "function audit(html) { return { performance: 80, seo: 80, accessibility: 80, analysis: 'No custom script defined.', status: 'Qualified' }; }"); ?>`;
+const customAuditScript = <?php echo json_encode($_SESSION['manual_audit_script'] ?? "function audit(html, url) { return { performance: 80, seo: 80, accessibility: 80, analysis: 'No custom script defined.', status: 'Qualified' }; }"); ?>;
 
 document.getElementById('startAuditBtn').addEventListener('click', async function() {
     const ai = document.querySelector('input[name="audit_ai"]:checked').value;
