@@ -6,15 +6,27 @@ if (isset($_GET['action']) && isset($_GET['api'])) {
     $api = $_GET['api'];
     
     if ($action === 'disconnect') {
-        if ($api === 'gmail') $_SESSION['gmail_connected'] = false;
-        if ($api === 'whatsapp') $_SESSION['whatsapp_connected'] = false;
+        $stmt = $pdo->prepare("DELETE FROM settings WHERE setting_key IN (?, ?, ?)");
+        
+        if ($api === 'gmail') {
+            $_SESSION['gmail_connected'] = false;
+            $stmt->execute(['gmail_connected', 'gmail_client_id', 'gmail_client_secret']);
+        }
+        if ($api === 'whatsapp') {
+            $_SESSION['whatsapp_connected'] = false;
+            $stmt->execute(['whatsapp_connected', 'whatsapp_access_token', 'whatsapp_phone_id']);
+        }
         if ($api === 'gemini') {
             $_SESSION['gemini_connected'] = false;
             $_SESSION['demo_mode'] = false;
+            $stmt->execute(['gemini_connected', 'gemini_api_key', 'gemini_demo_mode']);
         }
-        if ($api === 'chatgpt') $_SESSION['chatgpt_connected'] = false;
+        if ($api === 'chatgpt') {
+            $_SESSION['chatgpt_connected'] = false;
+            $stmt->execute(['chatgpt_connected', 'chatgpt_api_key', 'chatgpt_model']);
+        }
         
-        set_flash_message(ucfirst($api) . " disconnected successfully", "danger");
+        set_flash_message(ucfirst($api) . " disconnected and credentials removed.", "danger");
     }
     
     if ($action === 'connect') {
