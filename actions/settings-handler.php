@@ -13,19 +13,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // Load existing settings to merge if necessary, or just overwrite
-    $existingSettings = [];
-    if (file_exists($settingsFile)) {
-        $existingSettings = json_decode(file_get_contents($settingsFile), true) ?? [];
+    $stmt = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+    
+    foreach ($data as $key => $value) {
+        // Convert booleans to strings for storage
+        $valToStore = is_bool($value) ? ($value ? '1' : '0') : $value;
+        $stmt->execute([$key, $valToStore, $valToStore]);
     }
 
-    $updatedSettings = array_merge($existingSettings, $data);
-    
-    if (file_put_contents($settingsFile, json_encode($updatedSettings, JSON_PRETTY_PRINT))) {
-        echo json_encode(['success' => true, 'message' => 'Settings saved successfully!']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to save settings. Check permissions.']);
-    }
+    echo json_encode(['success' => true, 'message' => 'Settings saved successfully!']);
     exit;
 }
 

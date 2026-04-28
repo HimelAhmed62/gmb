@@ -3,7 +3,6 @@ require_once 'includes/config.php';
 $pageTitle = 'Settings';
 include 'includes/header.php'; 
 
-$settingsFile = 'data/settings.json';
 $settings = [
     'daily_limit' => 500,
     'delay_between_messages' => 45,
@@ -13,8 +12,19 @@ $settings = [
     'low_credit_alert' => true
 ];
 
-if (file_exists($settingsFile)) {
-    $settings = array_merge($settings, json_decode(file_get_contents($settingsFile), true) ?? []);
+// Load settings from database
+try {
+    $dbSettings = $pdo->query("SELECT setting_key, setting_value FROM settings")->fetchAll(PDO::FETCH_KEY_PAIR);
+    foreach ($dbSettings as $key => $val) {
+        // Convert to appropriate types
+        if (in_array($key, ['email_notifications', 'whatsapp_notifications', 'browser_notifications', 'low_credit_alert'])) {
+            $settings[$key] = (bool)$val;
+        } else {
+            $settings[$key] = $val;
+        }
+    }
+} catch (Exception $e) {
+    // Fallback to defaults
 }
 ?>
 
@@ -54,14 +64,14 @@ if (file_exists($settingsFile)) {
                                 <div class="bg-white shadow-sm p-2 rounded-3 text-danger"><i data-lucide="mail"></i></div>
                                 <div>
                                     <h6 class="fw-bold mb-1">Gmail / Google Workspace</h6>
-                                    <?php if ($_SESSION['gmail_connected']): ?>
+                                    <?php if ($_SESSION['gmail_connected'] ?? false): ?>
                                     <p class="mb-0 small text-success fw-bold d-flex align-items-center gap-1"><i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> Connected as growth@stripe.com</p>
                                     <?php else: ?>
                                     <p class="mb-0 small text-muted">Not connected</p>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <a href="api-gmail.php" class="btn btn-outline-custom btn-sm"><?php echo $_SESSION['gmail_connected'] ? 'Manage API' : 'Connect'; ?></a>
+                            <a href="api-gmail.php" class="btn btn-outline-custom btn-sm"><?php echo ($_SESSION['gmail_connected'] ?? false) ? 'Manage API' : 'Connect'; ?></a>
                         </div>
 
                         <!-- WhatsApp -->
@@ -70,14 +80,14 @@ if (file_exists($settingsFile)) {
                                 <div class="bg-white shadow-sm p-2 rounded-3 text-success"><i data-lucide="message-circle"></i></div>
                                 <div>
                                     <h6 class="fw-bold mb-1">WhatsApp Business API</h6>
-                                    <?php if ($_SESSION['whatsapp_connected']): ?>
+                                    <?php if ($_SESSION['whatsapp_connected'] ?? false): ?>
                                     <p class="mb-0 small text-success fw-bold d-flex align-items-center gap-1"><i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> Active</p>
                                     <?php else: ?>
                                     <p class="mb-0 small text-muted">Not active</p>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <a href="api-whatsapp.php" class="btn btn-outline-custom btn-sm"><?php echo $_SESSION['whatsapp_connected'] ? 'Manage API' : 'Connect'; ?></a>
+                            <a href="api-whatsapp.php" class="btn btn-outline-custom btn-sm"><?php echo ($_SESSION['whatsapp_connected'] ?? false) ? 'Manage API' : 'Connect'; ?></a>
                         </div>
 
                         <!-- Gemini -->
@@ -86,14 +96,14 @@ if (file_exists($settingsFile)) {
                                 <div class="bg-white shadow-sm p-2 rounded-3" style="color: #4285F4;"><i data-lucide="sparkles"></i></div>
                                 <div>
                                     <h6 class="fw-bold mb-1">Google Gemini API</h6>
-                                    <?php if ($_SESSION['gemini_connected']): ?>
+                                    <?php if ($_SESSION['gemini_connected'] ?? false): ?>
                                     <p class="mb-0 small text-success fw-bold d-flex align-items-center gap-1"><i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> Active</p>
                                     <?php else: ?>
                                     <p class="mb-0 small text-muted">Used for AI website auditing and email generation.</p>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <a href="api-gemini.php" class="btn <?php echo $_SESSION['gemini_connected'] ? 'btn-outline-custom' : 'btn-primary-custom'; ?> btn-sm px-3"><?php echo $_SESSION['gemini_connected'] ? 'Manage API' : 'Connect'; ?></a>
+                            <a href="api-gemini.php" class="btn <?php echo ($_SESSION['gemini_connected'] ?? false) ? 'btn-outline-custom' : 'btn-primary-custom'; ?> btn-sm px-3"><?php echo ($_SESSION['gemini_connected'] ?? false) ? 'Manage API' : 'Connect'; ?></a>
                         </div>
 
                         <!-- ChatGPT -->
@@ -102,14 +112,14 @@ if (file_exists($settingsFile)) {
                                 <div class="bg-white shadow-sm p-2 rounded-3" style="color: #10a37f;"><i data-lucide="brain"></i></div>
                                 <div>
                                     <h6 class="fw-bold mb-1">OpenAI ChatGPT API</h6>
-                                    <?php if ($_SESSION['chatgpt_connected']): ?>
+                                    <?php if ($_SESSION['chatgpt_connected'] ?? false): ?>
                                     <p class="mb-0 small text-success fw-bold d-flex align-items-center gap-1"><i data-lucide="check-circle-2" style="width: 14px; height: 14px;"></i> Active</p>
                                     <?php else: ?>
                                     <p class="mb-0 small text-muted">High-precision analysis and personalized content.</p>
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <a href="api-chatgpt.php" class="btn <?php echo $_SESSION['chatgpt_connected'] ? 'btn-outline-custom' : 'btn-primary-custom'; ?> btn-sm px-3"><?php echo $_SESSION['chatgpt_connected'] ? 'Manage API' : 'Connect'; ?></a>
+                            <a href="api-chatgpt.php" class="btn <?php echo ($_SESSION['chatgpt_connected'] ?? false) ? 'btn-outline-custom' : 'btn-primary-custom'; ?> btn-sm px-3"><?php echo ($_SESSION['chatgpt_connected'] ?? false) ? 'Manage API' : 'Connect'; ?></a>
                         </div>
                     </div>
                 </div>
