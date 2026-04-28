@@ -35,8 +35,41 @@ if (!isset($_SESSION['manual_audit_script'])) {
                 <form id="manualForm">
                     <div class="mb-4">
                         <label class="form-label fw-bold small text-dark">Function Code <span class="text-danger">*</span></label>
-                        <textarea id="manualScript" class="form-control form-control-custom font-monospace small bg-light" rows="18" placeholder="function audit(html, url) { ... }"><?php echo htmlspecialchars($_SESSION['manual_audit_script']); ?></textarea>
+                        <textarea id="manualScript" class="form-control form-control-custom font-monospace small bg-light" rows="18" placeholder="function audit(html, url) { ... }"><?php 
+$defaultScript = "function audit(html, url) {
+    let scores = { performance: 80, seo: 70, accessibility: 75 };
+    let analysis = [];
+    
+    // 1. CMS Detection
+    let cms = 'Custom / Unknown';
+    if (html.includes('wp-content')) cms = 'WordPress';
+    else if (html.includes('shopify.com')) cms = 'Shopify';
+    else if (html.includes('wixsite.com')) cms = 'Wix';
+    else if (html.includes('bitrix')) cms = 'Bitrix';
+    analysis.push('CMS Detected: ' + cms);
+
+    // 2. Contact Scraper
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/g;
+    const phoneRegex = /\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}/g;
+    
+    let emails = [...new Set(html.match(emailRegex) || [])];
+    let phones = [...new Set(html.match(phoneRegex) || [])].filter(p => p.length > 8);
+    
+    if (emails.length > 0) analysis.push('Emails Found: ' + emails.join(', '));
+    if (phones.length > 0) analysis.push('Phones Found: ' + phones.join(', '));
+
+    return {
+        performance: scores.performance,
+        seo: scores.seo,
+        accessibility: scores.accessibility,
+        analysis: analysis.join('\\n'),
+        status: (scores.seo > 50) ? 'Qualified' : 'Failed'
+    };
+}";
+echo htmlspecialchars(!empty($_SESSION['manual_audit_script']) ? $_SESSION['manual_audit_script'] : $defaultScript); 
+?></textarea>
                         <div class="form-text extra-small mt-2 text-muted">
+
                             <i data-lucide="info" style="width: 14px; height: 14px; margin-top: -2px;"></i> 
                             The function must be named <code>audit(html, url)</code> and return a JSON object with: <code>performance</code>, <code>seo</code>, <code>accessibility</code>, <code>analysis</code>, and <code>status</code> ('Qualified' or 'Failed').
                         </div>
