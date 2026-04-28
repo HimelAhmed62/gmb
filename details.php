@@ -46,7 +46,21 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
         <div>
             <h2 class="fw-bold text-dark mb-1"><?php echo htmlspecialchars($lead['company_name']); ?></h2>
             <p class="text-muted mb-0 d-flex align-items-center gap-2">
-                <?php echo htmlspecialchars($lead['website']); ?> 
+                <?php 
+                    $siteStr = htmlspecialchars($lead['website']);
+                    $siteDisplay = (strlen($siteStr) > 50) ? substr($siteStr, 0, 50) . '...' : $siteStr;
+                    $siteUrl = $siteStr;
+                    if (!empty($siteUrl) && !preg_match("~^(?:f|ht)tps?://~i", $siteUrl)) {
+                        $siteUrl = "http://" . $siteUrl;
+                    }
+                ?>
+                <?php if (!empty($siteStr)): ?>
+                    <a href="<?php echo $siteUrl; ?>" target="_blank" class="text-muted text-decoration-none fw-medium" style="transition: color 0.2s;" onmouseover="this.classList.add('text-primary')" onmouseout="this.classList.remove('text-primary')">
+                        <i data-lucide="link" style="width: 14px; height: 14px; margin-right: 4px; margin-top: -2px;"></i><?php echo $siteDisplay; ?>
+                    </a>
+                <?php else: ?>
+                    <span>N/A</span>
+                <?php endif; ?>
                 <?php 
                 $statusClass = 'primary';
                 if ($lead['status'] === 'Qualified') $statusClass = 'success';
