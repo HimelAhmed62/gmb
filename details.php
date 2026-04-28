@@ -97,16 +97,30 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                 </div>
                 
                 <h6 class="fw-bold mb-3">AI Research & Analysis</h6>
-                <div class="p-4 bg-primary bg-opacity-5 border border-primary border-opacity-10 rounded-4">
-                    <?php if (isset($lead['metadata']['ai_analysis'])): ?>
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="bg-primary bg-opacity-10 p-2 rounded-3 text-primary"><i data-lucide="microscope" style="width: 20px; height: 20px;"></i></div>
-                            <div class="text-dark small lh-base"><?php echo nl2br(htmlspecialchars($lead['metadata']['ai_analysis'])); ?></div>
+                <div class="p-4 rounded-4" style="background: linear-gradient(145deg, #1e1e2f, #2a2a40); color: #e0e0e0; border: 1px solid #3a3a5a; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                    <?php if (isset($lead['metadata']['ai_analysis']) && !empty(trim($lead['metadata']['ai_analysis']))): ?>
+                        <div class="d-flex flex-column gap-3">
+                            <?php 
+                            $analysisLines = explode("\n", $lead['metadata']['ai_analysis']);
+                            $counter = 1;
+                            foreach ($analysisLines as $line): 
+                                $line = trim($line);
+                                if (empty($line)) continue;
+                            ?>
+                            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center justify-content-center fw-bold rounded-circle flex-shrink-0" style="width: 28px; height: 28px; background: #6366f1; color: white; font-size: 14px; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4);">
+                                    <?php echo $counter++; ?>
+                                </div>
+                                <div class="small fw-medium lh-lg" style="color: #f8f9fa;">
+                                    <?php echo htmlspecialchars($line); ?>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
                         </div>
                     <?php else: ?>
-                        <div class="text-center py-3">
-                            <i data-lucide="search" class="text-muted mb-2" style="width: 32px; height: 32px;"></i>
-                            <p class="text-muted small mb-0">No live research data available. Click <strong>Re-Audit</strong> to start analyzing this website with AI.</p>
+                        <div class="text-center py-4">
+                            <i data-lucide="search" style="width: 40px; height: 40px; color: rgba(255,255,255,0.2);" class="mb-3"></i>
+                            <p class="small mb-0" style="color: rgba(255,255,255,0.6);">No live research data available. Click <strong class="text-white">Re-Audit</strong> to start analyzing this website with AI.</p>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -257,7 +271,7 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
 
 <script>
 // Load the custom script from the database
-const customAuditScript = <?php echo json_encode(!empty($_SESSION['manual_audit_script']) ? $_SESSION['manual_audit_script'] : "function audit(html, url) { return { performance: 80, seo: 80, accessibility: 80, analysis: 'No custom script defined.', status: 'Qualified' }; }"); ?>;
+const customAuditScript = <?php echo json_encode($_SESSION['manual_audit_script'] ?? "function audit(html, url) { return { performance: 80, seo: 80, accessibility: 80, analysis: 'No custom script defined.', status: 'Qualified' }; }"); ?>;
 
 document.getElementById('startAuditBtn').addEventListener('click', async function() {
     const ai = document.querySelector('input[name="audit_ai"]:checked').value;
