@@ -298,6 +298,7 @@ document.getElementById('startAuditBtn').addEventListener('click', async functio
                 saveData = JSON.parse(saveText); 
             } catch(e) { 
                 console.error("Save Error Response:", saveText);
+                alert("Server Error: " + saveText);
                 throw new Error("Invalid response from server during save."); 
             }
 

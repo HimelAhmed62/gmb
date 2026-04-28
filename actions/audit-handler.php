@@ -80,22 +80,35 @@ if ($aiType === 'manual_fetch') {
 }
 
 if ($aiType === 'manual_save') {
-    $results = json_decode($_POST['results'] ?? '{}', true);
-    $scores = json_encode([
-        'performance' => $results['performance'] ?? 50,
-        'seo' => $results['seo'] ?? 50,
-        'accessibility' => $results['accessibility'] ?? 50
-    ]);
-    
-    $status = $results['status'] ?? 'Qualified';
-    $score = $results['seo'] ?? 50;
-    $metadata = is_string($lead['metadata']) ? json_decode($lead['metadata'], true) : $lead['metadata'];
-    $metadata['ai_analysis'] = $results['analysis'] ?? 'Manual custom audit completed.';
-    $newMetadata = json_encode($metadata);
+    try {
+        $results = json_decode($_POST['results'] ?? '{}', true);
+        $scores = json_encode([
+            'performance' => $results['performance'] ?? 50,
+            'seo' => $results['seo'] ?? 50,
+            'accessibility' => $results['accessibility'] ?? 50
+        ]);
+        
+        $status = $results['status'] ?? 'Qualified';
+        $score = $results['seo'] ?? 50;
+        
+        // Handle metadata safely
+        $existingMetadata = $lead['metadata'] ?? '';
+        $metadata = [];
+        if (!empty($existingMetadata)) {
+            $decoded = json_decode($existingMetadata, true);
+            if (is_array($decoded)) $metadata = $decoded;
+        }
+        
+        $metadata['ai_analysis'] = $results['analysis'] ?? 'Manual custom audit completed.';
+        $newMetadata = json_encode($metadata);
 
-    $updateStmt = $pdo->prepare("UPDATE leads SET score = ?, status = ?, scores = ?, metadata = ? WHERE id = ?");
-    $updateStmt->execute([$score, $status, $scores, $newMetadata, $leadId]);
-    echo json_encode(['success' => true]);
+        $updateStmt = $pdo->prepare("UPDATE leads SET score = ?, status = ?, scores = ?, metadata = ? WHERE id = ?");
+        $updateStmt->execute([$score, $status, $scores, $newMetadata, $leadId]);
+        
+        echo json_encode(['success' => true, 'message' => 'Manual audit saved.']);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => 'Save Error: ' . $e->getMessage()]);
+    }
     exit;
 }
 
@@ -197,18 +210,21 @@ if ($success && $aiResponse) {
     ]);
     
     $status = $aiResponse['status'] ?? 'Qualified';
-    $score = $aiResponse['seo'] ?? 50; // Use SEO as main score
+    $score = $aiResponse['seo'] ?? 50; 
     
-    // Save the analysis in metadata or a new field
     $metadata = is_string($lead['metadata']) ? json_decode($lead['metadata'], true) : $lead['metadata'];
     $metadata['ai_analysis'] = $aiResponse['analysis'] ?? 'Audit completed successfully.';
     $newMetadata = json_encode($metadata);
 
-    $updateStmt = $pdo->prepare("UPDATE leads SET score = ?, status = ?, scores = ?, metadata = ? WHERE id = ?");
-    $updateStmt->execute([$score, $status, $scores, $newMetadata, $leadId]);
-
-    echo json_encode(['success' => true, 'message' => 'Audit completed successfully.']);
+    try {
+        $updateStmt = $pdo->prepare("UPDATE leads SET score = ?, status = ?, scores = ?, metadata = ? WHERE id = ?");
+        $updateStmt->execute([$score, $status, $scores, $newMetadata, $leadId]);
+        echo json_encode(['success' => true, 'message' => 'Audit completed successfully.']);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => 'Database Error: ' . $e->getMessage()]);
+    }
 } else {
-    echo json_encode(['success' => false, 'message' => 'AI failed to analyze the website. Response: ' . ($response ?? 'Timeout')]);
+    echo json_encode(['success' => false, 'message' => 'AI analysis failed or timed out.']);
 }
+exit;
 ?>

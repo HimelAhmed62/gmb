@@ -1,19 +1,17 @@
 <?php 
 require_once 'includes/config.php'; 
 
-$leadsFile = 'data/leads.json';
-$leads = [];
-if (file_exists($leadsFile)) {
-    $leads = json_decode(file_get_contents($leadsFile), true) ?? [];
+// Fetch leads from Database
+try {
+    $pendingStmt = $pdo->query("SELECT * FROM leads WHERE status = 'Preparing' ORDER BY id DESC");
+    $pendingLeads = $pendingStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $readyStmt = $pdo->query("SELECT * FROM leads WHERE status IN ('Ready', 'Qualified', 'Failed') ORDER BY id DESC");
+    $preparedLeads = $readyStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $pendingLeads = [];
+    $preparedLeads = [];
 }
-
-$pendingLeads = array_filter($leads, function($l) {
-    return $l['status'] === 'Preparing';
-});
-
-$preparedLeads = array_filter($leads, function($l) {
-    return $l['status'] === 'Ready';
-});
 
 $targetId = $_GET['id'] ?? '';
 
@@ -120,7 +118,11 @@ include 'includes/header.php';
                                 </td>
                             </tr>
                             <?php else: ?>
-                                <?php foreach ($preparedLeads as $lead): ?>
+                                <?php foreach ($preparedLeads as $lead): 
+                                    $badgeClass = 'badge-soft-primary';
+                                    if ($lead['status'] === 'Qualified') $badgeClass = 'badge-soft-success';
+                                    if ($lead['status'] === 'Failed') $badgeClass = 'badge-soft-danger';
+                                ?>
                                 <tr>
                                     <td class="ps-4">
                                         <div class="fw-bold text-dark"><?php echo htmlspecialchars($lead['company_name']); ?></div>
@@ -139,12 +141,12 @@ include 'includes/header.php';
                                         <div class="extra-small text-muted"><?php echo htmlspecialchars($lead['phone'] ?: 'N/A'); ?></div>
                                     </td>
                                     <td>
-                                        <span class="badge badge-soft-success rounded-pill"><?php echo $lead['status']; ?></span>
+                                        <span class="badge <?php echo $badgeClass; ?> rounded-pill"><?php echo $lead['status']; ?></span>
                                     </td>
                                     <td class="pe-4 text-end">
                                         <div class="d-flex justify-content-end gap-2">
+                                            <a href="details.php?id=<?php echo $lead['id']; ?>" class="btn btn-outline-custom btn-sm"><i data-lucide="eye" style="width: 14px; height: 14px;"></i> Details</a>
                                             <button class="btn btn-primary-custom btn-sm outreach-email-btn" data-lead='<?php echo json_encode($lead); ?>'><i data-lucide="mail" style="width: 14px; height: 14px;"></i> Mail</button>
-                                            <button class="btn btn-success btn-sm outreach-whatsapp-btn" data-lead='<?php echo json_encode($lead); ?>'><i data-lucide="message-circle" style="width: 14px; height: 14px;"></i> WhatsApp</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -233,36 +235,46 @@ document.addEventListener('DOMContentLoaded', function() {
         // 1. Start Analysis Button
         if (e.target && e.target.id === 'startProcessBtn') {
             const count = parseInt(document.getElementById('processCount').value);
+            const engine = document.querySelector('input[name="auditEngine"]:checked').value;
             if (isNaN(count) || count < 1) return;
 
             document.getElementById('setupArea').classList.add('d-none');
             document.getElementById('processingArea').classList.remove('d-none');
 
+            // 1. Get lead IDs to process
+            const pendingLeads = <?php echo json_encode(array_slice($pendingLeads, 0, 100)); ?>;
+            const processList = pendingLeads.slice(0, count);
+            
             let processed = 0;
-            const updateProgress = () => {
-                processed++;
-                const percent = (processed / count) * 100;
-                document.getElementById('processingProgress').style.width = percent + '%';
-                document.getElementById('progressStatus').innerText = `Analyzing lead ${processed} of ${count}...`;
-
-                if (processed < count) {
-                    setTimeout(updateProgress, 800 + (Math.random() * 1200));
-                } else {
-                    const engine = document.querySelector('input[name="auditEngine"]:checked').value;
-                    fetch('actions/simulate-prepare.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ count: count, id: '<?php echo $targetId; ?>', engine: engine })
-                    })
-                    .then(() => {
-                        setTimeout(() => {
-                            showToast(`Success: ${count} leads processed.`, 'success');
-                            window.location.href = 'prepare.php';
-                        }, 1000);
-                    });
+            const runNext = async () => {
+                if (processed >= processList.length) {
+                    showToast(`Success: ${processed} leads audited.`, 'success');
+                    setTimeout(() => window.location.reload(), 1500);
+                    return;
                 }
+
+                const lead = processList[processed];
+                document.getElementById('progressStatus').innerText = `Auditing: ${lead.company_name} (${processed + 1}/${processList.length})`;
+                
+                try {
+                    // Call the real audit handler
+                    const res = await fetch('actions/audit-handler.php', {
+                        method: 'POST',
+                        body: new URLSearchParams({ lead_id: lead.id, ai: engine })
+                    });
+                    const data = await res.json();
+                } catch (err) {
+                    console.error("Audit failed for lead:", lead.id, err);
+                }
+
+                processed++;
+                const percent = (processed / processList.length) * 100;
+                document.getElementById('processingProgress').style.width = percent + '%';
+                
+                runNext(); // Process next lead
             };
-            updateProgress();
+
+            runNext();
         }
 
         // 2. Outreach Email Button
