@@ -96,16 +96,40 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                     </div>
                 </div>
                 
+                <?php 
+                $infoLines = [];
+                $analysisLines = [];
+                if (isset($lead['metadata']['ai_analysis']) && !empty(trim($lead['metadata']['ai_analysis']))) {
+                    $lines = explode("\n", $lead['metadata']['ai_analysis']);
+                    $infoKeywords = ['📧', '📞', '🌐', '💻', 'Emails:', 'Phones:', 'Social Media:', 'Technologies:', 'Emails Found', 'Phone Numbers'];
+                    foreach ($lines as $line) {
+                        $line = trim($line);
+                        if (empty($line)) continue;
+                        
+                        $isInfo = false;
+                        foreach ($infoKeywords as $kw) {
+                            if (stripos($line, $kw) !== false) {
+                                $isInfo = true;
+                                break;
+                            }
+                        }
+                        
+                        if ($isInfo) {
+                            $infoLines[] = $line;
+                        } else {
+                            $analysisLines[] = $line;
+                        }
+                    }
+                }
+                ?>
+
                 <h6 class="fw-bold mb-3">AI Research & Analysis</h6>
-                <div class="p-4 rounded-4" style="background: linear-gradient(145deg, #1e1e2f, #2a2a40); color: #e0e0e0; border: 1px solid #3a3a5a; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
-                    <?php if (isset($lead['metadata']['ai_analysis']) && !empty(trim($lead['metadata']['ai_analysis']))): ?>
+                <div class="p-4 rounded-4 mb-4" style="background: linear-gradient(145deg, #1e1e2f, #2a2a40); color: #e0e0e0; border: 1px solid #3a3a5a; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                    <?php if (!empty($analysisLines)): ?>
                         <div class="d-flex flex-column gap-3">
                             <?php 
-                            $analysisLines = explode("\n", $lead['metadata']['ai_analysis']);
                             $counter = 1;
                             foreach ($analysisLines as $line): 
-                                $line = trim($line);
-                                if (empty($line)) continue;
                             ?>
                             <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s ease;">
                                 <div class="d-flex align-items-center justify-content-center fw-bold rounded-circle flex-shrink-0" style="width: 28px; height: 28px; background: #6366f1; color: white; font-size: 14px; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4);">
@@ -120,7 +144,33 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                     <?php else: ?>
                         <div class="text-center py-4">
                             <i data-lucide="search" style="width: 40px; height: 40px; color: rgba(255,255,255,0.2);" class="mb-3"></i>
-                            <p class="small mb-0" style="color: rgba(255,255,255,0.6);">No live research data available. Click <strong class="text-white">Re-Audit</strong> to start analyzing this website with AI.</p>
+                            <p class="small mb-0" style="color: rgba(255,255,255,0.6);">No analytical research data available. Click <strong class="text-white">Re-Audit</strong> to analyze.</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <h6 class="fw-bold mb-3">Info Collected from Website</h6>
+                <div class="p-4 rounded-4" style="background: linear-gradient(145deg, #1a2332, #243045); color: #e0e0e0; border: 1px solid #32415c; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+                    <?php if (!empty($infoLines)): ?>
+                        <div class="d-flex flex-column gap-3">
+                            <?php 
+                            $counter = 1;
+                            foreach ($infoLines as $line): 
+                            ?>
+                            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s ease;">
+                                <div class="d-flex align-items-center justify-content-center fw-bold rounded-circle flex-shrink-0" style="width: 28px; height: 28px; background: #10b981; color: white; font-size: 14px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);">
+                                    <i data-lucide="check" style="width: 16px; height: 16px;"></i>
+                                </div>
+                                <div class="small fw-medium lh-lg" style="color: #f8f9fa;">
+                                    <?php echo htmlspecialchars($line); ?>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php else: ?>
+                        <div class="text-center py-4">
+                            <i data-lucide="database" style="width: 40px; height: 40px; color: rgba(255,255,255,0.2);" class="mb-3"></i>
+                            <p class="small mb-0" style="color: rgba(255,255,255,0.6);">No specific contact info or technologies found.</p>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -155,26 +205,6 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                 <h5 class="fw-bold mb-0">Company Info</h5>
             </div>
             <div class="card-body-custom">
-                <?php
-                $aiAnalysis = $lead['metadata']['ai_analysis'] ?? '';
-                
-                $extractedEmail = '';
-                if (preg_match('/📧 Emails:\s*(.+)/', $aiAnalysis, $matches)) {
-                    if (trim($matches[1]) !== 'Not found') {
-                        $extractedEmail = trim($matches[1]);
-                    }
-                }
-                
-                $extractedPhone = '';
-                if (preg_match('/📞 Phones:\s*(.+)/', $aiAnalysis, $matches)) {
-                    if (trim($matches[1]) !== 'Not found') {
-                        $extractedPhone = trim($matches[1]);
-                    }
-                }
-                
-                $displayPhone = !empty($lead['phone']) ? $lead['phone'] : (!empty($lead['metadata']['phone_number']) ? $lead['metadata']['phone_number'] : (!empty($extractedPhone) ? $extractedPhone : 'N/A'));
-                $displayEmail = !empty($lead['email']) ? $lead['email'] : (!empty($extractedEmail) ? $extractedEmail : 'N/A');
-                ?>
                 <ul class="list-unstyled mb-0 d-flex flex-column gap-3">
                     <li class="d-flex align-items-center gap-3">
                         <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-3">
@@ -191,7 +221,7 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                         </div>
                         <div>
                             <p class="mb-0 text-muted extra-small fw-bold text-uppercase">Phone</p>
-                            <p class="mb-0 fw-bold small text-dark"><?php echo htmlspecialchars($displayPhone); ?></p>
+                            <p class="mb-0 fw-bold small text-dark"><?php echo htmlspecialchars($lead['phone'] ?: ($lead['metadata']['phone_number'] ?? 'N/A')); ?></p>
                         </div>
                     </li>
                     <li class="d-flex align-items-center gap-3">
@@ -200,7 +230,7 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                         </div>
                         <div>
                             <p class="mb-0 text-muted extra-small fw-bold text-uppercase">Email</p>
-                            <p class="mb-0 fw-bold small text-dark"><?php echo htmlspecialchars($displayEmail); ?></p>
+                            <p class="mb-0 fw-bold small text-dark"><?php echo htmlspecialchars($lead['email'] ?: 'N/A'); ?></p>
                         </div>
                     </li>
                 </ul>
