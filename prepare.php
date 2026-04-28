@@ -245,36 +245,47 @@ document.addEventListener('DOMContentLoaded', function() {
     const whatsappModal = new bootstrap.Modal(document.getElementById('whatsappModal'));
 
     // Handle all clicks in the document
-    document.addEventListener('click', function(e) {
-        // 1. Start Analysis Button
-        const startBtn = e.target.closest('#startProcessBtn');
-        if (startBtn) {
+    // Start Analysis Button Logic
+    const startProcessBtn = document.getElementById('startProcessBtn');
+    if (startProcessBtn) {
+        startProcessBtn.addEventListener('click', function() {
             const count = parseInt(document.getElementById('processCount').value);
             const engineInput = document.querySelector('input[name="auditEngine"]:checked');
+            
             if (!engineInput) {
                 alert('Please select an Audit Engine first.');
                 return;
             }
             const engine = engineInput.value;
-            if (isNaN(count) || count < 1) return;
+            
+            if (isNaN(count) || count < 1) {
+                alert('Please enter a valid number of leads to process.');
+                return;
+            }
 
             document.getElementById('setupArea').classList.add('d-none');
             document.getElementById('processingArea').classList.remove('d-none');
 
-            // 1. Get lead IDs to process
-            const pendingLeads = <?php echo json_encode(array_slice($pendingLeads, 0, 100)); ?>;
+            // 1. Get lead IDs to process securely
+            const pendingLeads = <?php echo json_encode(array_slice($pendingLeads, 0, 100), JSON_INVALID_UTF8_SUBSTITUTE) ?: '[]'; ?>;
             const processList = pendingLeads.slice(0, count);
             
+            if (processList.length === 0) {
+                alert("No leads available to process.");
+                window.location.reload();
+                return;
+            }
+
             let processed = 0;
             const runNext = async () => {
                 if (processed >= processList.length) {
-                    showToast(`Success: ${processed} leads audited.`, 'success');
+                    document.getElementById('progressStatus').innerText = "Complete!";
                     setTimeout(() => window.location.reload(), 1500);
                     return;
                 }
 
                 const lead = processList[processed];
-                document.getElementById('progressStatus').innerText = `Auditing: ${lead.company_name} (${processed + 1}/${processList.length})`;
+                document.getElementById('progressStatus').innerText = `Auditing: ${lead.company_name || 'Unknown'} (${processed + 1}/${processList.length})`;
                 
                 try {
                     // Call the real audit handler
@@ -282,7 +293,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         method: 'POST',
                         body: new URLSearchParams({ lead_id: lead.id, ai: engine })
                     });
-                    const data = await res.json();
+                    
+                    if (!res.ok) {
+                        console.error("HTTP error during audit:", res.status);
+                    }
                 } catch (err) {
                     console.error("Audit failed for lead:", lead.id, err);
                 }
@@ -295,9 +309,11 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             runNext();
-        }
+        });
+    }
 
-        // 2. Outreach Email Button
+    // Handle outreach clicks
+    document.addEventListener('click', function(e) {
         const emailBtn = e.target.closest('.outreach-email-btn');
         if (emailBtn) {
             const lead = JSON.parse(emailBtn.getAttribute('data-lead'));
