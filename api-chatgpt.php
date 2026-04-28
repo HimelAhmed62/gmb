@@ -97,7 +97,15 @@ document.getElementById('testChatBtn').addEventListener('click', function() {
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(async response => {
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.error('Raw Response:', text);
+            throw new Error('Server returned invalid JSON. Check console for details.');
+        }
+    })
     .then(result => {
         this.disabled = false;
         this.innerHTML = originalText;
@@ -110,7 +118,6 @@ document.getElementById('testChatBtn').addEventListener('click', function() {
             badge.innerText = 'Status: Connected';
             badge.className = 'badge badge-soft-success rounded-pill mt-1';
 
-            // Populate Models
             if (result.models && result.models.length > 0) {
                 modelSelect.innerHTML = '';
                 modelSelect.disabled = false;
@@ -121,20 +128,19 @@ document.getElementById('testChatBtn').addEventListener('click', function() {
                     if (m === 'gpt-4o' || m === 'gpt-4-turbo') option.selected = true;
                     modelSelect.appendChild(option);
                 });
-                document.getElementById('modelLoadStatus').innerHTML = `<i data-lucide="check" class="text-success" style="width: 12px; height: 12px;"></i> ${result.models.length} models loaded successfully.`;
-                showToast('Available models loaded from API.', 'info');
+                document.getElementById('modelLoadStatus').innerHTML = `<i data-lucide="check" class="text-success" style="width: 12px; height: 12px;"></i> Models loaded.`;
                 lucide.createIcons();
             }
         } else {
             showToast(result.message, 'danger');
-            badge.innerText = 'Status: Error / Not Connected';
+            badge.innerText = 'Status: Error';
             badge.className = 'badge badge-soft-danger rounded-pill mt-1';
         }
     })
     .catch(error => {
         this.disabled = false;
         this.innerHTML = originalText;
-        showToast('Connection failed. Please check your internet or API key.', 'danger');
+        showToast(error.message, 'danger');
     });
 });
 
@@ -142,9 +148,15 @@ function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = `toast-custom show bg-white border border-${type} p-3 rounded-3 shadow-lg d-flex align-items-center gap-3`;
     toast.style.position = 'fixed'; toast.style.bottom = '24px'; toast.style.right = '24px'; toast.style.zIndex = '9999';
-    toast.innerHTML = `<p class="mb-0 fw-bold small text-dark">${message}</p>`;
+    toast.style.minWidth = '300px';
+    toast.innerHTML = `
+        <div class="flex-grow-1">
+            <p class="mb-0 fw-bold small text-dark">${message}</p>
+        </div>
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
+    setTimeout(() => { if(toast) toast.remove(); }, 6000);
 }
 </script>
 
