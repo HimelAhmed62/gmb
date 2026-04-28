@@ -3,23 +3,26 @@ require_once 'includes/config.php';
 $pageTitle = 'Dashboard';
 include 'includes/header.php'; 
 
-$leadsFile = 'data/leads.json';
-$leads = [];
-if (file_exists($leadsFile)) {
-    $leads = json_decode(file_get_contents($leadsFile), true) ?? [];
+// Fetch Live Statistics from MySQL
+try {
+    // Total Leads
+    $totalLeads = $pdo->query("SELECT COUNT(*) FROM leads")->fetchColumn();
+    
+    // Processed Leads (status not pending)
+    $processedLeads = $pdo->query("SELECT COUNT(*) FROM leads WHERE status != 'Pending'")->fetchColumn();
+    
+    // Qualified Leads
+    $qualifiedLeads = $pdo->query("SELECT COUNT(*) FROM leads WHERE status = 'Qualified'")->fetchColumn();
+    
+    // Recent Leads (Last 5)
+    $recentLeads = $pdo->query("SELECT * FROM leads ORDER BY created_at DESC LIMIT 5")->fetchAll();
+    
+} catch (Exception $e) {
+    $totalLeads = 0;
+    $processedLeads = 0;
+    $qualifiedLeads = 0;
+    $recentLeads = [];
 }
-
-// Sort by created_at descending
-usort($leads, function($a, $b) {
-    return strtotime($b['created_at']) - strtotime($a['created_at']);
-});
-
-$totalLeads = count($leads);
-$processedLeads = count(array_filter($leads, function($l) { return $l['status'] !== 'Pending'; }));
-$qualifiedLeads = count(array_filter($leads, function($l) { return $l['status'] === 'Qualified'; }));
-
-// Get recent leads (last 5)
-$recentLeads = array_slice($leads, 0, 5);
 ?>
 
 <div class="mb-4">
@@ -186,7 +189,7 @@ $recentLeads = array_slice($leads, 0, 5);
                 </div>
                 <div class="card-body-custom">
                     <!-- Gmail API Status -->
-                    <?php if ($_SESSION['gmail_connected']): ?>
+                    <?php if ($_SESSION['gmail_connected'] ?? false): ?>
                     <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25 mb-3">
                         <div class="d-flex align-items-center gap-2">
                             <div class="spinner-grow spinner-grow-sm text-success" role="status"><span class="visually-hidden">Loading...</span></div>
@@ -205,7 +208,7 @@ $recentLeads = array_slice($leads, 0, 5);
                     <?php endif; ?>
 
                     <!-- WhatsApp API Status -->
-                    <?php if ($_SESSION['whatsapp_connected']): ?>
+                    <?php if ($_SESSION['whatsapp_connected'] ?? false): ?>
                     <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25 mb-3">
                         <div class="d-flex align-items-center gap-2">
                             <div class="spinner-grow spinner-grow-sm text-success" role="status"><span class="visually-hidden">Loading...</span></div>
@@ -224,7 +227,7 @@ $recentLeads = array_slice($leads, 0, 5);
                     <?php endif; ?>
 
                     <!-- Gemini API Status -->
-                    <?php if ($_SESSION['gemini_connected']): ?>
+                    <?php if ($_SESSION['gemini_connected'] ?? false): ?>
                     <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25 mb-3">
                         <div class="d-flex align-items-center gap-2">
                             <div class="spinner-grow spinner-grow-sm text-success" role="status"><span class="visually-hidden">Loading...</span></div>
@@ -243,7 +246,7 @@ $recentLeads = array_slice($leads, 0, 5);
                     <?php endif; ?>
 
                     <!-- ChatGPT API Status -->
-                    <?php if ($_SESSION['chatgpt_connected']): ?>
+                    <?php if ($_SESSION['chatgpt_connected'] ?? false): ?>
                     <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25 mb-4">
                         <div class="d-flex align-items-center gap-2">
                             <div class="spinner-grow spinner-grow-sm text-success" role="status"><span class="visually-hidden">Loading...</span></div>
@@ -264,7 +267,7 @@ $recentLeads = array_slice($leads, 0, 5);
                     <div class="p-3 bg-light rounded-3 border">
                         <p class="text-uppercase text-muted small fw-bold mb-2 tracking-wider">Daily Limit</p>
                         <div class="d-flex justify-content-between mb-1">
-                            <span class="fw-bold small">0 / <?php echo number_format($_SESSION['settings']['daily_limit'] ?? 500); ?></span>
+                            <span class="fw-bold small">0 / <?php echo number_format($_SESSION['daily_limit'] ?? 500); ?></span>
                             <span class="text-muted small">0%</span>
                         </div>
                         <div class="progress" style="height: 6px;">
