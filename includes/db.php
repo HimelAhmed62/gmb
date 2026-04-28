@@ -3,7 +3,7 @@
 // Railway provides connection details via environment variables
 
 // Railway Connection URL (User Provided)
-$db_url = getenv('MYSQL_URL') ?: getenv('DATABASE_URL') ?: 'mysql://root:kOteGsxgwAkPRQZqPrnwPxjVtJAhunuV@metro.proxy.rlwy.net:41083/railway';
+$db_url = getenv('MYSQL_URL') ?: getenv('DATABASE_URL') ?: 'mysql://root:CyWBIhQMOQFjcqSCFmTxPqbhxyGOYjGL@metro.proxy.rlwy.net:41083/railway';
 
 if ($db_url && strpos($db_url, 'mysql://') === 0) {
     // URL based connection
