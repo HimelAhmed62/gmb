@@ -60,7 +60,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -68,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         curl_close($ch);
 
         if ($response === false) {
-            echo json_encode(['success' => false, 'message' => 'Network Error: ' . $curlError]);
+            echo json_encode(['success' => false, 'message' => 'Network/Connection Error: ' . $curlError . ' (Code: ' . curl_errno($ch) . ')']);
             exit;
         }
 
@@ -83,31 +86,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             sort($models);
-            
-            // If no gpt- models found, provide defaults
-            if (empty($models)) {
-                $models = ['gpt-3.5-turbo', 'gpt-4', 'gpt-4o'];
-            }
-
+            if (empty($models)) $models = ['gpt-3.5-turbo', 'gpt-4', 'gpt-4o'];
             echo json_encode(['success' => true, 'message' => 'OpenAI API Key is valid.', 'models' => $models]);
         } else {
             $errorData = json_decode($response, true);
-            $errorMsg = $errorData['error']['message'] ?? 'Invalid API Key or Billing Issue (HTTP ' . $httpCode . ')';
+            $errorMsg = $errorData['error']['message'] ?? 'OpenAI Response Error (HTTP ' . $httpCode . ')';
             echo json_encode(['success' => false, 'message' => $errorMsg]);
         }
         exit;
     }
 
     if ($api === 'gemini' && $action === 'verify') {
-        // ... (existing gemini verify logic)
         header('Content-Type: application/json');
         if (empty($apiKey)) {
-            echo json_encode(['success' => false, 'message' => 'API Key is missing.']);
+            echo json_encode(['success' => false, 'message' => 'Gemini API Key is missing.']);
             exit;
         }
 
         $url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" . $apiKey;
-        $payload = json_encode(["contents" => [["parts" => [["text" => "Say hi"]]]]]);
+        $payload = json_encode(["contents" => [["parts" => [["text" => "hi"]]]]]);
         
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
@@ -116,16 +113,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
         curl_close($ch);
 
+        if ($response === false) {
+            echo json_encode(['success' => false, 'message' => 'Gemini Network Error: ' . $curlError]);
+            exit;
+        }
+
         if ($httpCode === 200) {
-            echo json_encode(['success' => true, 'message' => 'API Key is valid.']);
+            echo json_encode(['success' => true, 'message' => 'Gemini API Key is valid!']);
         } else {
-            echo json_encode(['success' => false, 'message' => 'Invalid API Key or Connection Error.']);
+            $errorData = json_decode($response, true);
+            $errorMsg = $errorData[0]['error']['message'] ?? 'Gemini API Error (HTTP ' . $httpCode . ')';
+            echo json_encode(['success' => false, 'message' => $errorMsg]);
         }
         exit;
     }
