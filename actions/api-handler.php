@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['success' => true, 'message' => 'OpenAI API Key is valid.', 'models' => $models]);
         } else {
             $errorData = json_decode($response, true);
-            $errorMsg = $errorData['error']['message'] ?? 'OpenAI Response Error (HTTP ' . $httpCode . ')';
+            $errorMsg = $errorData['error']['message'] ?? 'OpenAI Response Error (HTTP ' . $httpCode . '): ' . $response;
             echo json_encode(['success' => false, 'message' => $errorMsg]);
         }
         exit;
@@ -116,15 +116,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         curl_setopt($ch, CURLOPT_TIMEOUT, 20);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36');
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
         curl_close($ch);
 
         if ($response === false) {
-            echo json_encode(['success' => false, 'message' => 'Gemini Network Error: ' . $curlError]);
+            echo json_encode(['success' => false, 'message' => 'Gemini Network Error.']);
             exit;
         }
 
@@ -132,7 +131,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode(['success' => true, 'message' => 'Gemini API Key is valid!']);
         } else {
             $errorData = json_decode($response, true);
-            $errorMsg = $errorData[0]['error']['message'] ?? 'Gemini API Error (HTTP ' . $httpCode . ')';
+            $errorMsg = $errorData['error']['message'] ?? $errorData[0]['error']['message'] ?? 'Gemini API Error (HTTP ' . $httpCode . '): ' . $response;
             echo json_encode(['success' => false, 'message' => $errorMsg]);
         }
         exit;
@@ -173,4 +172,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header("Location: " . $referer);
     exit();
 }
+?>
 ?>
