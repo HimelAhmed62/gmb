@@ -9,7 +9,11 @@ $settings = [
     'email_notifications' => true,
     'whatsapp_notifications' => true,
     'browser_notifications' => true,
-    'low_credit_alert' => true
+    'low_credit_alert' => true,
+    'engine_gemini' => true,
+    'engine_chatgpt' => true,
+    'engine_manual' => true,
+    'dark_theme' => false
 ];
 
 // Load settings from database
@@ -17,7 +21,7 @@ try {
     $dbSettings = $pdo->query("SELECT setting_key, setting_value FROM settings")->fetchAll(PDO::FETCH_KEY_PAIR);
     foreach ($dbSettings as $key => $val) {
         // Convert to appropriate types
-        if (in_array($key, ['email_notifications', 'whatsapp_notifications', 'browser_notifications', 'low_credit_alert'])) {
+        if (in_array($key, ['email_notifications', 'whatsapp_notifications', 'browser_notifications', 'low_credit_alert', 'engine_gemini', 'engine_chatgpt', 'engine_manual', 'dark_theme'])) {
             $settings[$key] = (bool)$val;
         } else {
             $settings[$key] = $val;
@@ -36,7 +40,10 @@ try {
 <div class="row g-4">
     <div class="col-lg-3">
         <div class="d-flex flex-column gap-2" id="settingsTabs">
-            <button class="settings-nav-btn active" data-tab="api">
+            <button class="settings-nav-btn active" data-tab="general">
+                <i data-lucide="layout" style="width: 18px; height: 18px;"></i> General Settings
+            </button>
+            <button class="settings-nav-btn" data-tab="api">
                 <i data-lucide="key" style="width: 18px; height: 18px;"></i> API Connections
             </button>
             <button class="settings-nav-btn" data-tab="limits">
@@ -50,8 +57,73 @@ try {
 
     <div class="col-lg-9">
         <div class="tab-content-wrapper">
+            <!-- General Settings Tab -->
+            <div class="settings-tab-pane active" id="tab-general">
+                <form id="generalSettingsForm">
+                    <div class="premium-card mb-4">
+                        <div class="card-header-custom border-bottom pb-3">
+                            <h5 class="fw-bold mb-1">Audit Engines</h5>
+                            <p class="text-muted small mb-0">Enable or disable specific audit engines across the platform.</p>
+                        </div>
+                        <div class="card-body-custom">
+                            <div class="d-flex flex-column gap-3">
+                                <div class="d-flex justify-content-between align-items-center p-3 border rounded-3 bg-light">
+                                    <div>
+                                        <h6 class="fw-bold mb-1 d-flex align-items-center gap-2"><i data-lucide="sparkles" class="text-primary" style="width: 16px; height: 16px;"></i> Google Gemini Engine</h6>
+                                        <p class="text-muted small mb-0">Allow auditing using Google Gemini AI.</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="engine_gemini" role="switch" style="width: 40px; height: 20px;" <?php echo $settings['engine_gemini'] ? 'checked' : ''; ?>>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center p-3 border rounded-3 bg-light">
+                                    <div>
+                                        <h6 class="fw-bold mb-1 d-flex align-items-center gap-2"><i data-lucide="brain" class="text-success" style="width: 16px; height: 16px;"></i> OpenAI ChatGPT Engine</h6>
+                                        <p class="text-muted small mb-0">Allow auditing using OpenAI ChatGPT.</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="engine_chatgpt" role="switch" style="width: 40px; height: 20px;" <?php echo $settings['engine_chatgpt'] ? 'checked' : ''; ?>>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center p-3 border rounded-3 bg-light">
+                                    <div>
+                                        <h6 class="fw-bold mb-1 d-flex align-items-center gap-2"><i data-lucide="code-2" class="text-warning" style="width: 16px; height: 16px;"></i> Manual JS Engine</h6>
+                                        <p class="text-muted small mb-0">Allow local custom JavaScript auditing.</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" name="engine_manual" role="switch" style="width: 40px; height: 20px;" <?php echo $settings['engine_manual'] ? 'checked' : ''; ?>>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="premium-card mb-4">
+                        <div class="card-header-custom border-bottom pb-3">
+                            <h5 class="fw-bold mb-1">Appearance</h5>
+                            <p class="text-muted small mb-0">Customize the look and feel of your dashboard.</p>
+                        </div>
+                        <div class="card-body-custom">
+                            <div class="d-flex justify-content-between align-items-center p-3 border rounded-3 bg-light">
+                                <div>
+                                    <h6 class="fw-bold mb-1 d-flex align-items-center gap-2"><i data-lucide="moon" class="text-dark" style="width: 16px; height: 16px;"></i> Dark Theme</h6>
+                                    <p class="text-muted small mb-0">Switch the entire dashboard to dark mode.</p>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" name="dark_theme" role="switch" style="width: 40px; height: 20px;" <?php echo $settings['dark_theme'] ? 'checked' : ''; ?>>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-3 border-top">
+                                <button type="submit" class="btn btn-primary-custom px-4">Save General Settings</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
             <!-- API Connections Tab -->
-            <div class="settings-tab-pane active" id="tab-api">
+            <div class="settings-tab-pane" id="tab-api">
                 <div class="premium-card">
                     <div class="card-header-custom">
                         <h5 class="fw-bold mb-1">API Connections</h5>
@@ -318,8 +390,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     };
 
-    document.getElementById('limitsForm').addEventListener('submit', handleFormSubmit);
-    document.getElementById('notificationsForm').addEventListener('submit', handleFormSubmit);
+    document.getElementById('limitsForm')?.addEventListener('submit', handleFormSubmit);
+    document.getElementById('notificationsForm')?.addEventListener('submit', handleFormSubmit);
+    document.getElementById('generalSettingsForm')?.addEventListener('submit', handleFormSubmit);
 });
 
 function showToast(message, type = 'success') {

@@ -24,7 +24,11 @@ try {
         'gmail_connected' => false,
         'whatsapp_connected' => false,
         'gemini_connected' => false,
-        'chatgpt_connected' => false
+        'chatgpt_connected' => false,
+        'engine_gemini' => true,
+        'engine_chatgpt' => true,
+        'engine_manual' => true,
+        'dark_theme' => false
     ];
     foreach ($defaults as $key => $val) {
         if (!isset($_SESSION[$key])) $_SESSION[$key] = $val;

@@ -10,6 +10,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
+    <?php if (isset($_SESSION['dark_theme']) && $_SESSION['dark_theme']): ?>
+    <script>document.body.classList.add('dark-theme');</script>
+    <?php endif; ?>
     <div id="app-wrapper">
         <?php include 'sidebar.php'; ?>
         
