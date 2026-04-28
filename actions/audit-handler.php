@@ -13,11 +13,12 @@ header('Content-Type: application/json');
 try {
     $pdo->exec("ALTER TABLE leads ADD COLUMN IF NOT EXISTS scores TEXT AFTER score");
     $pdo->exec("ALTER TABLE leads ADD COLUMN IF NOT EXISTS metadata TEXT AFTER scores");
-    $pdo->exec("ALTER TABLE leads MODIFY COLUMN status ENUM('Pending', 'Preparing', 'Ready', 'Contacted', 'Qualified', 'Failed') DEFAULT 'Pending'");
+    $pdo->exec("ALTER TABLE leads MODIFY COLUMN status VARCHAR(50) DEFAULT 'Pending'");
 } catch (Exception $e) {
     // If IF NOT EXISTS is not supported, we attempt to add columns manually
     try { $pdo->exec("ALTER TABLE leads ADD scores TEXT AFTER score"); } catch(Exception $ex) {}
     try { $pdo->exec("ALTER TABLE leads ADD metadata TEXT AFTER scores"); } catch(Exception $ex) {}
+    try { $pdo->exec("ALTER TABLE leads MODIFY COLUMN status VARCHAR(50) DEFAULT 'Pending'"); } catch(Exception $ex) {}
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
