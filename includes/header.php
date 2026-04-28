@@ -9,10 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body>
-    <?php if (isset($_SESSION['dark_theme']) && $_SESSION['dark_theme']): ?>
-    <script>document.body.classList.add('dark-theme');</script>
-    <?php endif; ?>
+<body class="<?php echo (!empty($_SESSION['dark_theme'])) ? 'dark-theme' : ''; ?>">
     <div id="app-wrapper">
         <?php include 'sidebar.php'; ?>
         

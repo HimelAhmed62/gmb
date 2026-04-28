@@ -203,7 +203,8 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                 <p class="text-muted small mb-4">Choose which AI model you want to use for this website research. The audit will use the instructions defined in your API settings.</p>
                 
                 <div class="row g-3">
-                    <div class="col-4">
+                    <?php if (!isset($_SESSION['engine_chatgpt']) || $_SESSION['engine_chatgpt']): ?>
+                    <div class="col">
                         <label class="w-100 cursor-pointer">
                             <input type="radio" name="audit_ai" value="chatgpt" class="btn-check" checked <?php echo !($_SESSION['chatgpt_connected'] ?? false) ? 'disabled' : ''; ?>>
                             <div class="btn btn-outline-custom w-100 p-3 rounded-4 d-flex flex-column align-items-center gap-2">
@@ -215,7 +216,10 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                             </div>
                         </label>
                     </div>
-                    <div class="col-4">
+                    <?php endif; ?>
+
+                    <?php if (!isset($_SESSION['engine_gemini']) || $_SESSION['engine_gemini']): ?>
+                    <div class="col">
                         <label class="w-100 cursor-pointer">
                             <input type="radio" name="audit_ai" value="gemini" class="btn-check" <?php echo !($_SESSION['gemini_connected'] ?? false) ? 'disabled' : ''; ?>>
                             <div class="btn btn-outline-custom w-100 p-3 rounded-4 d-flex flex-column align-items-center gap-2">
@@ -227,7 +231,10 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                             </div>
                         </label>
                     </div>
-                    <div class="col-4">
+                    <?php endif; ?>
+
+                    <?php if (!isset($_SESSION['engine_manual']) || $_SESSION['engine_manual']): ?>
+                    <div class="col">
                         <label class="w-100 cursor-pointer">
                             <input type="radio" name="audit_ai" value="manual" class="btn-check">
                             <div class="btn btn-outline-custom w-100 p-3 rounded-4 d-flex flex-column align-items-center gap-2">
@@ -237,6 +244,7 @@ $accessibility = $lead['scores']['accessibility'] ?? rand(80, 100);
                             </div>
                         </label>
                     </div>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="modal-footer border-top-0 p-4 pt-0">

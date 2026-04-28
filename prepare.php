@@ -51,27 +51,36 @@ include 'includes/header.php';
                         <div class="p-4 bg-light rounded-4 border border-dashed">
                             <h6 class="fw-bold mb-2">Audit Engine Configuration</h6>
                             <div class="d-flex gap-3 mt-3">
+                                <?php $firstChecked = false; ?>
+                                <?php if (!isset($_SESSION['engine_gemini']) || $_SESSION['engine_gemini']): ?>
                                 <div class="form-check custom-radio-card">
-                                    <input class="form-check-input d-none" type="radio" name="auditEngine" id="engineGemini" value="gemini" checked>
+                                    <input class="form-check-input d-none" type="radio" name="auditEngine" id="engineGemini" value="gemini" <?php echo !$firstChecked ? 'checked' : ''; $firstChecked = true; ?>>
                                     <label class="form-check-label p-3 rounded-4 border w-100 cursor-pointer" for="engineGemini">
                                         <div class="fw-bold small mb-1"><i data-lucide="sparkles" class="text-primary" style="width: 14px;"></i> Gemini</div>
                                         <div class="extra-small text-muted">Advanced reasoning</div>
                                     </label>
                                 </div>
+                                <?php endif; ?>
+
+                                <?php if (!isset($_SESSION['engine_chatgpt']) || $_SESSION['engine_chatgpt']): ?>
                                 <div class="form-check custom-radio-card">
-                                    <input class="form-check-input d-none" type="radio" name="auditEngine" id="engineChatGPT" value="chatgpt">
+                                    <input class="form-check-input d-none" type="radio" name="auditEngine" id="engineChatGPT" value="chatgpt" <?php echo !$firstChecked ? 'checked' : ''; $firstChecked = true; ?>>
                                     <label class="form-check-label p-3 rounded-4 border w-100 cursor-pointer" for="engineChatGPT">
                                         <div class="fw-bold small mb-1"><i data-lucide="brain" class="text-success" style="width: 14px;"></i> ChatGPT</div>
                                         <div class="extra-small text-muted">Precise analysis</div>
                                     </label>
                                 </div>
+                                <?php endif; ?>
+
+                                <?php if (!isset($_SESSION['engine_manual']) || $_SESSION['engine_manual']): ?>
                                 <div class="form-check custom-radio-card">
-                                    <input class="form-check-input d-none" type="radio" name="auditEngine" id="engineManual" value="manual">
+                                    <input class="form-check-input d-none" type="radio" name="auditEngine" id="engineManual" value="manual" <?php echo !$firstChecked ? 'checked' : ''; $firstChecked = true; ?>>
                                     <label class="form-check-label p-3 rounded-4 border w-100 cursor-pointer" for="engineManual">
                                         <div class="fw-bold small mb-1"><i data-lucide="code" class="text-warning" style="width: 14px;"></i> Manual JS</div>
                                         <div class="extra-small text-muted">Fast local audit</div>
                                     </label>
                                 </div>
+                                <?php endif; ?>
                             </div>
                         </div>
                     </div>
