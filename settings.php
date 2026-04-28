@@ -175,55 +175,76 @@ try {
     else if (html.includes('bitrix')) cms = 'Bitrix';
     analysis.push('CMS Detected: ' + cms);
 
-    // 2. Contact Information Scraper
-    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/g;
-    const phoneRegex = /\\+?\\d{1,4}?[-.\\s]?\\(?\\d{1,3}?\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}/g;
-    
-    let emails = [...new Set(html.match(emailRegex) || [])];
-    let phones = [...new Set(html.match(phoneRegex) || [])].filter(p => p.length > 8);
-    
-    if (emails.length > 0) analysis.push('Emails Found: ' + emails.join(', '));
-    else analysis.push('Emails: None found on homepage.');
-    
-    if (phones.length > 0) analysis.push('Phone Numbers: ' + phones.join(', '));
-    else analysis.push('Phones: None found on homepage.');
+    let issues = [];
+    let scores = { performance: 90, seo: 90, accessibility: 90 };
 
-    // 3. Performance / Loading Speed (Estimated)
-    let size = html.length / 1024; // KB
-    let speedScore = 100 - (size / 10);
-    scores.performance = Math.max(10, Math.min(99, Math.round(speedScore)));
-    analysis.push('Estimated Loading Speed: ' + (scores.performance > 70 ? 'Good' : 'Needs Optimization') + ' (' + Math.round(size) + 'KB code size)');
-
-    // 3. Security (SSL Check using URL)
-    let isSecure = url.startsWith('https');
-    analysis.push('Security: ' + (isSecure ? 'SSL Protected (HTTPS)' : 'Insecure (HTTP)'));
-    if (!isSecure) scores.accessibility -= 20;
-
-    // 4. WordPress Specific Checks
-    if (cms === 'WordPress') {
-        if (html.includes('wp-json/wp/v2/users')) analysis.push('Security Warning: WordPress REST API users endpoint is exposed.');
-        if (html.includes('ver=')) analysis.push('Note: Script version strings are visible, which can reveal plugin/theme versions.');
+    // ---------- SSL Check ----------
+    if (url.startsWith('http://')) {
+        issues.push('No SSL (Insecure HTTP)');
+        scores.accessibility -= 20;
     }
 
-    // 5. Responsiveness
-    let isResponsive = html.includes('viewport') && html.includes('width=device-width');
-    analysis.push('Responsiveness: ' + (isResponsive ? 'Mobile Friendly' : 'Missing Viewport Meta Tag (Not Responsive)'));
-    if (!isResponsive) scores.accessibility -= 30;
-
-    // 6. SEO Basics
-    let hasTitle = html.includes('<title>');
-    let hasDesc = html.includes('name=\"description\"');
-    if (!hasTitle || !hasDesc) {
-        analysis.push('SEO: Missing essential meta tags (Title or Description).');
-        scores.seo -= 40;
+    // ---------- Content Check ----------
+    if (!html || html.length < 200) {
+        issues.push('Website content is too small or not loading properly');
+        scores.performance = 20;
     }
+
+    // ---------- SEO Checks ----------
+    const hasTitle = /<title[^>]*>.*?<\/title>/i.test(html);
+    if (!hasTitle) {
+        issues.push('Missing page title (SEO issue)');
+        scores.seo -= 30;
+    }
+
+    const hasDescription = /<meta[^>]*name=["']description["'][^>]*>/i.test(html);
+    if (!hasDescription) {
+        issues.push('Missing meta description (SEO issue)');
+        scores.seo -= 30;
+    }
+
+    const hasH1 = /<h1[^>]*>.*?<\/h1>/i.test(html);
+    if (!hasH1) {
+        issues.push('Missing H1 heading (Important for SEO)');
+        scores.seo -= 20;
+    }
+
+    // ---------- UX / Mobile Checks ----------
+    const hasViewport = /<meta[^>]*name=["']viewport["'][^>]*>/i.test(html);
+    if (!hasViewport) {
+        issues.push('Not mobile optimized (missing viewport meta)');
+        scores.accessibility -= 30;
+    }
+
+    const images = html.match(/<img[^>]*>/gi) || [];
+    const imagesWithoutAlt = images.filter(img => !/alt=/i.test(img));
+    if (images.length > 0 && imagesWithoutAlt.length > 0) {
+        issues.push(`Images missing alt text (${imagesWithoutAlt.length} images found)`);
+        scores.accessibility -= 10;
+    }
+
+    // ---------- Performance ----------
+    if (html.length > 200000) {
+        issues.push('Large HTML size (May slow down loading)');
+        scores.performance -= 20;
+    }
+
+    // ---------- Security ----------
+    if (/<form[^>]*>/i.test(html) && !/<form[^>]*action=/i.test(html)) {
+        issues.push('Form found without proper action attribute');
+    }
+
+    // ---------- Final Score Logic ----------
+    let finalStatus = 'Qualified';
+    if (issues.length >= 5) finalStatus = 'Failed';
+    else if (issues.length >= 3) finalStatus = 'Pending';
 
     return {
-        performance: scores.performance,
-        seo: scores.seo,
-        accessibility: scores.accessibility,
-        analysis: analysis.join('\\n'),
-        status: (scores.seo > 50) ? 'Qualified' : 'Failed'
+        performance: Math.max(10, scores.performance),
+        seo: Math.max(10, scores.seo),
+        accessibility: Math.max(10, scores.accessibility),
+        analysis: issues.length > 0 ? issues.join('\\n') : 'No major issues found. Website is well optimized.',
+        status: finalStatus
     };
 }"; ?></textarea>
                                         <div class="form-text extra-small text-muted mt-1">Write a function that returns an object with performance, seo, accessibility, analysis, and status.</div>
